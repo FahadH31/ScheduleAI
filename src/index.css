@@ -1,13 +1,21 @@
-body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.custom-scrollbar {
+  /* Hide scrollbar for WebKit browsers */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+  overflow-x: hidden; /* Hide horizontal scrollbar */
 }
 
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+/* For WebKit browsers (Chrome, Safari, and Opera) */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 0; /* Hide vertical scrollbar */
+  height: 0; /* Hide horizontal scrollbar */
+}
+
+/* Optional: Hide scrollbars for specific elements */
+.custom-scrollbar::-webkit-scrollbar {
+  display: none; /* Hide scrollbars */
 }
