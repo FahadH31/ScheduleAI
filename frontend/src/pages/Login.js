@@ -1,4 +1,5 @@
 import React from "react";
+import GoogleLoginButton from "../components/GoogleLoginButton";
 import LoginGraphic from "../assets/login_graphic.png"
 import Logo from "../assets/logo.png"
 
@@ -9,6 +10,7 @@ function Login() {
             max-sm:mb-10 max-sm:p-2 max-sm:h-[50vh]'>
                 <p class='mt-32 text-4xl font-bold max-sm:text-3xl max-sm:mt-12'>Connect your Calendar</p>
                 <p class='mt-3 text-xl font-light max-sm:text-lg'>Get started by signing in with your Google account!</p>
+                <GoogleLoginButton />
                 <div id = 'branding' class = 'flex justify-self-start mb-3 ml-3 mt-auto max-sm:hidden'>
                     <img src = {Logo} alt = "ScheduleAI Logo" class = 'w-[3vw] 2xl:w-[1.5vw]'></img>
                     <p class = 'ml-2 my-auto font-semibold'>ScheduleAI</p>
