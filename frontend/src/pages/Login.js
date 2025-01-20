@@ -18,10 +18,10 @@ function Login() {
             </div>
             <div id='right-side' class='flex flex-col flex-direction-col w-[50vw] bg-[#065AD8] 
             justify-center items-center max-sm:w-[100vw] max-sm:h-[75vh] max-sm:p-2'>
-                <img src={LoginGraphic} alt="" class="w-[40vw] h-[40vw] 2xl:w-[25vw] 2xl:h-[25vw]
-                max-sm:w-[75vw] max-sm:h-[75vw]"></img>
-                <p class='text-3xl font-bold text-white max-sm:text-xl'>Enhance your productivity with AI.</p>
-                <p class='text-lg mt-2 font-[300] text-white max-sm:text-lg'>Allow an assistant to handle all your scheduling needs.</p>
+                <img src={LoginGraphic} alt="" class="w-[32vw] h-[32vw] 2xl:w-[25vw] 2xl:h-[25vw]
+                max-sm:w-[75vw] max-sm:h-[75vw] max-lg:w-[40vw] max-lg:h-[40vw]"></img>
+                <p class='text-2xl font-bold text-white max-sm:text-xl max-lg:text-3xl'>Enhance your productivity with AI.</p>
+                <p class='text-base mt-2 font-[300] text-white max-sm:text-lg max-lg:text-lg'>Allow an assistant to handle all your scheduling needs.</p>
             </div>
         </div>
     )
