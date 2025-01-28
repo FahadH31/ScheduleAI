@@ -74,7 +74,7 @@ function Main() {
         <div className="text-white text-2xl text-center font-bold mb-3">
           AI Helper
         </div>
-        <div className="flex-grow bg-gray-600 rounded-xl p-5 border-2 border-black shadow-lg flex flex-col">
+        <div className="flex-grow bg-gray-600 rounded-xl p-5 border-2 border-black shadow-lg flex flex-col overflow-y-auto">
           <strong className="text-lg">Conversations:</strong>
           <div className="flex-grow mt-4 p-3 bg-slate-500 text-black rounded-lg overflow-y-auto border-2 border-black custom-scrollbar">
             {responses.length > 0 ? (
