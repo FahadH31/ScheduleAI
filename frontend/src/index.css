@@ -3,19 +3,16 @@
 @tailwind utilities;
 
 .custom-scrollbar {
-  /* Hide scrollbar for WebKit browsers */
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE and Edge */
-  overflow-x: hidden; /* Hide horizontal scrollbar */
+  scrollbar-width: none;
+  -ms-overflow-style: none; 
+  overflow-x: hidden;
 }
 
-/* For WebKit browsers (Chrome, Safari, and Opera) */
 .custom-scrollbar::-webkit-scrollbar {
-  width: 0; /* Hide vertical scrollbar */
-  height: 0; /* Hide horizontal scrollbar */
+  width: 0; 
+  height: 0;
 }
 
-/* Optional: Hide scrollbars for specific elements */
 .custom-scrollbar::-webkit-scrollbar {
-  display: none; /* Hide scrollbars */
+  display: none; 
 }
