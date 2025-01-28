@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
-import { getOpenAIResponse } from "../openaiService";
+import { getOpenAIResponse } from "./../components/openaiService";
 
 function Main() {
   const [modal, setModal] = useState(false);
@@ -22,14 +22,12 @@ function Main() {
       console.log("Sending prompt to OpenAI:", inputText);
       const aiResponse = await getOpenAIResponse(inputText);
       console.log("OpenAI Response:", aiResponse);
-      console.log("Updated responses:", responses);
 
       const newResponse = {
         user: inputText,
-        ai: aiResponse.choices[0].text,
+        ai: aiResponse, // Direct response content
       };
       setResponses((prev) => [...prev, newResponse]);
-      console.log("Updated responses:", [...responses, newResponse]);
       setInputText("");
     } catch (error) {
       console.error("Error fetching OpenAI response:", error);
@@ -47,7 +45,7 @@ function Main() {
   };
 
   return (
-    <div className="w-screen h-screen bg-slate-700 flex relative overflow-hidden">
+    <div className="w-full min-h-screen bg-slate-700 flex overflow-hidden">
       <div
         className={`fixed top-0 left-0 h-full bg-gray-800 text-white transition-transform transform p-5 ${
           modal ? "translate-x-0" : "-translate-x-full"
