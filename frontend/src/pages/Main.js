@@ -25,7 +25,7 @@ function Main() {
 
       const newResponse = {
         user: inputText,
-        ai: aiResponse, // Direct response content
+        ai: aiResponse.data,
       };
       setResponses((prev) => [...prev, newResponse]);
       setInputText("");
@@ -72,11 +72,6 @@ function Main() {
             <FullCalendar
               plugins={[dayGridPlugin, timeGridPlugin]}
               initialView="dayGridMonth"
-              events={[
-                { title: "Event 1", date: "2025-01-13" },
-                { title: "Event 3", date: "2025-01-13" },
-                { title: "Event 2", date: "2025-01-15" },
-              ]}
               height="auto"
             />
           </div>

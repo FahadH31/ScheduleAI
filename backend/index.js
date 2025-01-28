@@ -3,15 +3,16 @@ const cors = require("cors");
 const dotenv = require("dotenv");
 require("dotenv").config();
 
-const OpenAI = require("openai");
-
+const OpenAI = require("openai"); // Correct import for OpenAI
 dotenv.config();
+
 if (!process.env.API_KEY) {
   console.error("Error: Missing OpenAI API key in environment variables.");
   process.exit(1);
 }
 
-const openai = new OpenAI({
+// Initialize OpenAI client
+const client = new OpenAI({
   apiKey: process.env.API_KEY,
 });
 
@@ -28,6 +29,8 @@ app.get("/", (req, res) => {
 
 // OpenAI API route
 app.post("/api/openai", async (req, res) => {
+  console.log("Received payload:", req.body);
+
   const { prompt } = req.body;
 
   if (!prompt || typeof prompt !== "string") {
@@ -37,7 +40,7 @@ app.post("/api/openai", async (req, res) => {
   }
 
   try {
-    const completion = await openai.createChatCompletion({
+    const completion = await client.chat.completions.create({
       model: "gpt-4",
       messages: [
         { role: "system", content: "You are a helpful assistant." },
@@ -45,7 +48,7 @@ app.post("/api/openai", async (req, res) => {
       ],
     });
 
-    const responseMessage = completion.data.choices[0].message.content;
+    const responseMessage = completion.choices[0].message.content;
 
     res.json({ success: true, data: responseMessage });
   } catch (error) {
