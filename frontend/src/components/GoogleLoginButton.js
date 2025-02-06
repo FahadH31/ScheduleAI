@@ -9,7 +9,7 @@ const GoogleLoginButton = () => {
   const handleSuccess = (credentialResponse) => {
     console.log('Login Successful:', credentialResponse);
 
-    localStorage.setItem("isAuthenticated", "true"); 
+    sessionStorage.setItem("isAuthenticated", "true"); 
 
     navigate('/dashboard');
   };
