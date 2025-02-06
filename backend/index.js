@@ -2,8 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
 require("dotenv").config();
-
-const OpenAI = require("openai"); // Correct import for OpenAI
+const OpenAI = require("openai"); 
 dotenv.config();
 
 if (!process.env.OPENAI_API_KEY) {
@@ -13,7 +12,7 @@ if (!process.env.OPENAI_API_KEY) {
 
 // Initialize OpenAI client
 const client = new OpenAI({
-  apiKey: process.env.API_KEY,
+  apiKey: process.env.OPENAI_API_KEY,
 });
 
 const app = express();

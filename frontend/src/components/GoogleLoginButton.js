@@ -3,6 +3,7 @@ import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
 import { useNavigate } from 'react-router-dom';
 
 const GoogleLoginButton = () => {
+  const GoogleClientID = process.env.REACT_APP_GOOGLE_CLIENT_ID; 
   const navigate = useNavigate();
 
   const handleSuccess = (credentialResponse) => {
@@ -18,7 +19,7 @@ const GoogleLoginButton = () => {
   };
 
   return (
-    <GoogleOAuthProvider clientId = "679265817947-kbqpfqnln5e28k3ni070iclurq1hggb7.apps.googleusercontent.com">
+    <GoogleOAuthProvider clientId = {GoogleClientID}>
       <div class = 'self-center mt-5'>
         <GoogleLogin onSuccess={handleSuccess} onError={handleError} />
       </div>

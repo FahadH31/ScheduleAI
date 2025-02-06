@@ -1,12 +1,12 @@
 import axios from "axios";
 
-const BASE_URL = "http://localhost:8080/api/openai";
+const BACKEND_URL = `${process.env.REACT_APP_BACKEND_URL}/api/openai`;
 
 export const getOpenAIResponse = async (prompt) => {
   try {
     console.log("Sending prompt to backend:", prompt);
     const response = await axios.post(
-      BASE_URL,
+      BACKEND_URL,
       { prompt },
       {
         headers: { "Content-Type": "application/json" },
