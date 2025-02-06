@@ -6,7 +6,7 @@ require("dotenv").config();
 const OpenAI = require("openai"); // Correct import for OpenAI
 dotenv.config();
 
-if (!process.env.API_KEY) {
+if (!process.env.OPENAI_API_KEY) {
   console.error("Error: Missing OpenAI API key in environment variables.");
   process.exit(1);
 }
@@ -21,11 +21,6 @@ const port = process.env.PORT || 8080;
 
 app.use(cors());
 app.use(express.json());
-
-// Root route
-app.get("/", (req, res) => {
-  res.send("Hello and welcome to the backend!");
-});
 
 // OpenAI API route
 app.post("/api/openai", async (req, res) => {

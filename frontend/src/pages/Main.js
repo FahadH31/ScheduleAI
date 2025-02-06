@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
-import { getOpenAIResponse } from "./../components/openaiService";
+import { getOpenAIResponse } from "../components/OpenAIService";
 
 function Main() {
   const [inputText, setInputText] = useState("");
