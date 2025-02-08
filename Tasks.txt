@@ -1,0 +1,20 @@
+- Investigate why all events on the calendar aren't appearing.
+    - Could be:
+        - Calendar ID 
+        - Scope Permissions
+
+- Streamline authentication process (number of clicks/confirmations).
+    - Ensure to get all necessary scopes.
+
+- Test more actions via new components and existing Test Page.
+
+- Edit OpenAI route, come up with design/flow to get ChatGPT integrated with the 
+code so it can correctly perform the desired actions based on user input.
+
+- Polish UI/Frontend for main application page.
+
+- Display via iframe and public calendar approach.
+
+
+
+

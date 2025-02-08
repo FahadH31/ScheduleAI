@@ -1,19 +1,21 @@
 const express = require("express");
 const cors = require("cors");
-const dotenv = require("dotenv");
-require("dotenv").config();
-const OpenAI = require("openai"); 
-dotenv.config();
+const OpenAI = require("openai");
+const { OAuth2Client } = require('google-auth-library');
+const { google } = require('googleapis');
+require('dotenv').config();
 
-if (!process.env.OPENAI_API_KEY) {
-  console.error("Error: Missing OpenAI API key in environment variables.");
-  process.exit(1);
-}
-
-// Initialize OpenAI client
+// Initialize OpenAI Client
 const client = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
+  apiKey: process.env.OPENAI_API_KEY
 });
+
+// Initalize Google Authentication Client
+const oAuth2Client = new OAuth2Client(
+  process.env.GOOGLE_CLIENT_ID,
+  process.env.GOOGLE_CLIENT_SECRET,
+  'postmessage',
+);
 
 const app = express();
 const port = process.env.PORT || 8080;
@@ -21,7 +23,14 @@ const port = process.env.PORT || 8080;
 app.use(cors());
 app.use(express.json());
 
-// OpenAI API route
+// Google Authentication Route
+app.post("/api/google-auth", async(req, res) => {
+  const { tokens } = await oAuth2Client.getToken(req.body.tokenResponse); // Exchange code for tokens  
+  oAuth2Client.setCredentials(tokens);
+  res.json(tokens);
+});
+
+// OpenAI Chat Route
 app.post("/api/openai", async (req, res) => {
   console.log("Received payload:", req.body);
 
@@ -58,7 +67,32 @@ app.post("/api/openai", async (req, res) => {
   }
 });
 
-// Start the server
+// Fetch Calendar Events
+app.get("/calendar/fetch-events", async (req, res) => {
+  try {
+    const accessToken = req.headers.authorization?.split("Bearer ")[1];
+    if (!accessToken) return res.status(401).json({ error: "Unauthorized" });
+
+    const auth = new google.auth.OAuth2();
+    auth.setCredentials({ access_token: accessToken });
+
+    const calendar = google.calendar({ version: "v3", auth });
+    const response = await calendar.events.list({
+      calendarId: "primary",
+      timeMin: new Date().toISOString(),
+      maxResults: 10,
+      singleEvents: true,
+      orderBy: "startTime",
+    });
+
+    res.json(response.data.items);
+  } catch (error) {
+    console.error("Error fetching calendar events:", error);
+    res.status(500).json({ error: "Failed to fetch events" });
+  }
+});
+
+// Start Server
 app.listen(port, () => {
   console.log(`Backend running at http://localhost:${port}`);
 });
