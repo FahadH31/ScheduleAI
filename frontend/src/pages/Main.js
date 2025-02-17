@@ -1,8 +1,5 @@
 import React, { useState } from "react";
-import FullCalendar from "@fullcalendar/react";
-import dayGridPlugin from "@fullcalendar/daygrid";
-import timeGridPlugin from "@fullcalendar/timegrid";
-import { getOpenAIResponse } from "../components/OpenAIService";
+import { getOpenAIResponse } from "../components/OpenAICall";
 
 function Main() {
   const [inputText, setInputText] = useState("");
@@ -18,7 +15,6 @@ function Main() {
     setLoading(true);
 
     try {
-      console.log("Sending prompt to OpenAI:", inputText);
       const aiResponse = await getOpenAIResponse(inputText);
       console.log("OpenAI Response:", aiResponse);
 
@@ -53,24 +49,8 @@ function Main() {
 
   return (
     <div className="flex w-full h-screen bg-slate-700">
-      <div className="flex flex-col w-1/2 bg-gray-500 p-5 overflow-hidden">
-        <h1 className="text-center text-2xl font-bold text-white">
-          View Your Schedule!
-        </h1>
-        <div className="flex-grow bg-white rounded-xl mt-4 shadow-lg flex items-center justify-center">
-          <div className="w-full h-full p-5 custom-scrollbar">
-            <FullCalendar
-              plugins={[dayGridPlugin, timeGridPlugin]}
-              initialView="dayGridMonth"
-              height="100%"
-              width="100%"
-              className="custom-scrollbar"
-            />
-          </div>
-        </div>
-      </div>
-
-      <div className="flex flex-col w-1/2 bg-slate-800 p-5 overflow-hidden">
+      <iframe src="https://calendar.google.com/calendar/embed?src=fhphotography31%40gmail.com&ctz=America%2FToronto" width="50%" height="auto" frameborder="0" scrolling="no"></iframe>
+      <div className="flex flex-col w-1/2 bg-slate-800 p-5 overflow-hidden ml-auto mr-0">
         <div className="text-white text-2xl text-center font-bold mb-3">
           AI Helper
         </div>

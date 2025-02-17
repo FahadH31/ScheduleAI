@@ -20,11 +20,10 @@ const GoogleLoginButton = () => {
       sessionStorage.setItem("isAuthenticated", "true");
       sessionStorage.setItem("accessToken", accessToken); 
 
-
       navigate('/dashboard');
     },
     flow: "auth-code",
-    scope: "https://www.googleapis.com/auth/calendar.readonly",
+    scope: "https://www.googleapis.com/auth/calendar",
     onError: () => {
       console.log("Login Failed");
     },
