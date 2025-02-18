@@ -3,28 +3,10 @@ const cors = require("cors");
 const OpenAI = require("openai");
 const { OAuth2Client, auth } = require('google-auth-library');
 const { google } = require('googleapis');
-const { calendar } = require("googleapis/build/src/apis/calendar");
 require('dotenv').config();
 
-// Initialize OpenAI Client
-const openaiClient = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
-});
-
-// Initalize Google Authentication Client
-const oAuth2Client = new OAuth2Client(
-  process.env.GOOGLE_CLIENT_ID,
-  process.env.GOOGLE_CLIENT_SECRET,
-  'postmessage',
-);
-
-const app = express();
-const port = process.env.PORT || 8080;
-
-app.use(cors());
-app.use(express.json());
-
-
+// Variables to be used in OpenAI Calls
+const currentDate = new Date();
 const createEventFormat = `
   "summary": "Google I/O 2015",
   "location": "800 Howard St., San Francisco, CA 94103",
@@ -52,7 +34,61 @@ const createEventFormat = `
     ],
   },`
 
-// Function to insert an event into Google Calendar
+// Initialize OpenAI Client
+const openaiClient = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY
+});
+
+// Initalize Google Authentication Client
+const oAuth2Client = new OAuth2Client(
+  process.env.GOOGLE_CLIENT_ID,
+  process.env.GOOGLE_CLIENT_SECRET,
+  'postmessage',
+);
+
+const app = express();
+const port = process.env.PORT || 8080;
+app.use(cors());
+app.use(express.json());
+
+// Function to get the user's upcoming events
+async function getUpcomingEvents(accessToken) {
+  const auth = new google.auth.OAuth2();
+  auth.setCredentials({ access_token: accessToken }); 
+  const calendar = google.calendar({ version: 'v3', auth });
+
+  try {
+    const response = await calendar.events.list({
+      calendarId: 'primary',
+      timeMin: new Date().toISOString(),
+      maxResults: 5,
+      singleEvents: true,
+      orderBy: 'startTime',
+    });
+
+    const events = response.data.items;
+
+    if (!events.length) {
+      console.log('No upcoming events found.');
+      return [];
+    }
+
+    // Store only event ID, summary, start/endtime
+    const eventSummaries = events.map(event => ({
+      id: event.id,
+      summary: event.summary,
+      startTime: event.start,
+      endTime: event.start,
+    }));
+
+    return eventSummaries;
+  } catch (error) {
+    console.error('Error fetching events:', error);
+    return [];
+  }
+}
+
+// Function to insert an event into the user's Google Calendar
 async function insertEvent(accessToken, eventData) {
   try {
     const auth = new google.auth.OAuth2();
@@ -73,7 +109,6 @@ async function insertEvent(accessToken, eventData) {
   }
 }
 
-
 // Google Authentication Route
 app.post("/api/google-auth", async (req, res) => {
   const { tokens } = await oAuth2Client.getToken(req.body.tokenResponse); // Exchange code for tokens  
@@ -83,48 +118,55 @@ app.post("/api/google-auth", async (req, res) => {
 
 // OpenAI Chat Route
 app.post("/api/openai", async (req, res) => {
+  // User prompt
   const { prompt } = req.body;
+
   if (!prompt || typeof prompt !== "string") {
     return res
       .status(400)
       .json({ success: false, error: "Invalid or missing 'prompt' field" });
   }
 
+  // Access token from frontend for interaction w/ Google Calendar
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return res.status(401).json({ error: "Unauthorized: No token provided" });
   }
-
   const access_token = authHeader.split(" ")[1];
+  
+  // Store upcoming events to provide in OpenAI call.
+  var upcomingEvents = await getUpcomingEvents(access_token);
+  upcomingEvents = JSON.stringify(upcomingEvents);
 
+  // OpenAI call to generate the structured event data from user input. 
   const calendarOperation = await openaiClient.chat.completions.create({
     model: "gpt-3.5-turbo",
     messages: [
       {
         role: "system",
-        content: `You are an assistant that schedules events using Google Calendar. You will ONLY
-          respond to each and every user message in a structured format, exactly like the following example: 
-          ${createEventFormat}. The only mandatory fields are the start and end time (in (ISO 8601 format), fill the others as you deem 
-          suitable. Don't set notifications or an email address unless explicitly told to do so. Assume the timezone is EST.` },
+        content: `You are an assistant that schedules events using Google Calendar. 
+          The current date/time is ${currentDate}. 
+          When asked to create an event, you will ONLY respond in a structured format, exactly like the following example: 
+          ${createEventFormat}. The only mandatory fields are the start and end time (in (ISO 8601 format), use 30 minutes as the default length.
+          Fill the other fields as you deem suitable. Don't set notifications or an email address unless explicitly told to do so. Assume the timezone is EST.` },
       { role: "user", content: prompt },
     ],
   });
 
+  // OpenAI call to provide the user a response in the chat. 
   const userResponse = await openaiClient.chat.completions.create({
     model: "gpt-3.5-turbo",
     messages: [
       {
         role: "system",
-        content: `You are an AI assistant that helps schedule events using Google Calendar. 
-        Please provide a short, concise, and friendly response to the user input, 
-        confirming that request is being performed immediately/as you speak. Ask them if they
-        have any more requests. In the case that they ask questions related to their schedule,
-        the user's schedule information is attached.`},
+        content: `You are an AI assistant that helps schedule events using Google Calendar.
+        The current date/time is ${currentDate}.  Please provide a short, concise, and friendly response to the user input. 
+        Information on the user's upcoming schedule is attached: ${upcomingEvents}. Do not make up any information - refer to the schedule
+        as required.`},
       { role: "user", content: prompt },
     ]
   })
 
-  console.log(calendarOperation.choices[0].message.content)
   const aiCalendarDataResponse = JSON.parse(calendarOperation.choices[0].message.content);
   const aiUserResponse = userResponse.choices[0].message.content;
   insertEvent(access_token, aiCalendarDataResponse);

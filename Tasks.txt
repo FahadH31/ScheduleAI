@@ -1,12 +1,10 @@
-- Streamline authentication process (number of clicks/confirmations).
-    - Ensure to get all necessary scopes.
-
-- Test more actions via new components and existing Test Page.
-
-- Edit OpenAI route, come up with design/flow to get ChatGPT integrated with the 
-code so it can correctly perform the desired actions based on user input.
+- Add deleting and updates. 
 
 - Polish UI/Frontend for main application page.
+
+- Store chat history in session storage.
+
+- Reload page automatically once openai updates the calendar.
 
 - Add streaming & conversation history for openai chat portion.
 
