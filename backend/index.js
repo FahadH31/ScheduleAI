@@ -219,7 +219,7 @@ async function updateEvent(accessToken, prompt, currentDate, upcomingEvents) {
       },
       { role: "user", content: prompt },
     ],
-    response_format: {type: "json_object"}
+    response_format: { type: "json_object" }
   });
 
   const { eventId, updatedEvent } = JSON.parse(updateEventCompletion.choices[0].message.content);
@@ -290,28 +290,46 @@ app.post("/api/openai", async (req, res) => {
   else if (calendarAction == "DELETE_EVENT") {
     deleteEvent(access_token, prompt, currentDate, upcomingEvents)
   }
-  else if (calendarAction == "UPDATE_EVENT"){
+  else if (calendarAction == "UPDATE_EVENT") {
     updateEvent(access_token, prompt, currentDate, upcomingEvents)
   }
 
-  // OpenAI call to provide the user a response in the chat. 
-  const userResponse = await openaiClient.chat.completions.create({
-    model: "gpt-3.5-turbo",
-    messages: [
-      {
-        role: "system",
-        content: `You are an AI assistant that helps schedule events using Google Calendar.
+  try {
+    // OpenAI call to provide the user a response in the chat. 
+    const userResponseCompletion = await openaiClient.chat.completions.create({
+      model: "gpt-3.5-turbo",
+      messages: [
+        {
+          role: "system",
+          content: `You are an AI assistant that helps schedule events using Google Calendar.
         The current date/time is ${currentDate}.  Please provide a concise and friendly response
         confirming that the intended action is now completed. Information on the user's upcoming schedule: ${upcomingEvents}. 
         Only refer to this information if the user specifically asks something about their schedule 
-        (ex. upcoming events, how to optimize, etc.). Notifications/reminders are only set upon explicit user demand.`},
-      { role: "user", content: prompt },
-    ]
-  })
+        (ex. upcoming events, how to optimize, etc.). 
+        Notifications/reminders are only set upon explicit user demand. Never provide the user with 
+        their upcoming schedule data in the chat, since it isn't formatted for user reading.`},
+        { role: "user", content: prompt },
+      ],
+      stream: true,
+    })
 
-  const aiUserResponse = userResponse.choices[0].message.content;
+    res.setHeader("Content-Type", "text/event-stream");
+    res.setHeader("Cache-Control", "no-cache");
+    res.setHeader("Connection", "keep-alive");
 
-  res.json({ data: aiUserResponse });
+    for await (const chunk of userResponseCompletion) {
+      if (chunk.choices[0]?.delta?.content) {
+        res.write(chunk.choices[0].delta.content);
+      }
+    }
+
+    res.write("\n\n");
+    res.end();
+  }
+  catch (error) {
+    console.error("OpenAI Streaming Error:", error);
+    res.status(500).json({ error: "Error fetching OpenAI response" });
+  }
 });
 
 // Start Server
