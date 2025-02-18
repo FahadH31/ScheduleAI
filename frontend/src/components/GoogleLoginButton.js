@@ -16,9 +16,18 @@ const GoogleLoginButton = () => {
 
       const accessToken = tokens.data.access_token;
 
+      // Fetch user email address from Google's API
+      const userInfo = await axios.get('https://www.googleapis.com/oauth2/v3/userinfo', {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+      const email = userInfo.data.email;
+
       // Session-based user data
       sessionStorage.setItem("isAuthenticated", "true");
       sessionStorage.setItem("accessToken", accessToken); 
+      sessionStorage.setItem("email", email); // Store the email address
 
       navigate('/dashboard');
     },

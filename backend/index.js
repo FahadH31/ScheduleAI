@@ -297,7 +297,7 @@ app.post("/api/openai", async (req, res) => {
   try {
     // OpenAI call to provide the user a response in the chat. 
     const userResponseCompletion = await openaiClient.chat.completions.create({
-      model: "gpt-3.5-turbo",
+      model: "gpt-4o",
       messages: [
         {
           role: "system",

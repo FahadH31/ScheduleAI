@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { getOpenAIResponse } from "../components/OpenAICall";
+import GoogleCalendarIFrame from "../components/GoogleCalendarIFrame"
 
 function Main() {
   const [inputText, setInputText] = useState("");
@@ -55,10 +56,7 @@ function Main() {
 
   return (
     <div className="flex w-full h-screen bg-gray-900 text-white">
-      <iframe
-        src="https://calendar.google.com/calendar/embed?src=fhphotography31%40gmail.com&ctz=America%2FToronto"
-        className="w-5/6 h-full border-r border-gray-700"
-      ></iframe>
+      <GoogleCalendarIFrame />
       <div className="flex flex-col w-1/2 p-6 space-y-4">
         <h1 className="text-3xl font-semibold text-center">Google Calendar AI Assistant</h1>
         <div className="flex-grow bg-gray-800 p-5 rounded-lg shadow-lg border border-gray-700 overflow-y-auto custom-scrollbar">
