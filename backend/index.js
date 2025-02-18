@@ -6,7 +6,7 @@ const { google } = require('googleapis');
 const date = require('date-and-time');
 require('dotenv').config();
 
-// Structured formats to be used in OpenAI action calls 
+// Structured format to be used in OpenAI action calls 
 const createEventFormat = `
   "summary": "Google I/O 2015",
   "location": "800 Howard St., San Francisco, CA 94103",
@@ -33,6 +33,12 @@ const createEventFormat = `
       {"method": "popup", "minutes": 10},
     ],
   },`
+
+const updateEventFormat = `
+  "summary": "Updated Meeting Summary",
+  "startTime": "2025-02-20T10:00:00Z",
+  "endTime": "2025-02-20T11:00:00Z"
+`
 
 // Initialize OpenAI Client
 const openaiClient = new OpenAI({
@@ -71,7 +77,7 @@ const selectAction = async (prompt) => {
     ]
   })
 
-  const action = classifyAction.choices[0].message.content; 
+  const action = classifyAction.choices[0].message.content;
   console.log(action);
   return action;
 }
@@ -86,7 +92,7 @@ async function getUpcomingEvents(accessToken) {
     const response = await calendar.events.list({
       calendarId: 'primary',
       timeMin: new Date().toISOString(),
-      maxResults: 5,
+      maxResults: 10,
       singleEvents: true,
       orderBy: 'startTime',
     });
@@ -117,7 +123,7 @@ async function getUpcomingEvents(accessToken) {
 async function createEvent(accessToken, prompt, currentDate) {
 
   // Generate the structured event data from user input, via an OpenAI call. 
-  const createEventData = await openaiClient.chat.completions.create({
+  const createEventCompletion = await openaiClient.chat.completions.create({
     model: "gpt-3.5-turbo",
     messages: [
       {
@@ -131,7 +137,7 @@ async function createEvent(accessToken, prompt, currentDate) {
     ],
   });
 
-  eventData = JSON.parse(createEventData.choices[0].message.content);
+  eventData = JSON.parse(createEventCompletion.choices[0].message.content);
 
   // Insert the data 
   try {
@@ -145,7 +151,7 @@ async function createEvent(accessToken, prompt, currentDate) {
       resource: eventData,
     });
 
-    console.log("Event created:", response.data.htmlLink);
+    console.log("Event created successfully");
     return { success: true, link: response.data.htmlLink };
   } catch (error) {
     console.error("Error creating event:", error);
@@ -153,6 +159,94 @@ async function createEvent(accessToken, prompt, currentDate) {
   }
 }
 
+// Function to delete an event from the user's Google Calendar
+async function deleteEvent(accessToken, prompt, currentDate, upcomingEvents) {
+
+  const deleteEventCompletion = await openaiClient.chat.completions.create({
+    model: "gpt-3.5-turbo",
+    messages: [
+      {
+        role: "system",
+        content: `You are an assistant that deletes events using Google Calendar. 
+            The current date/time is ${currentDate}. 
+            When asked to delete an event, you will identify the correct event to delete and respond 
+            with ONLY the event id, regardless of user input. 
+            Following are the user's upcoming events with their IDs: ${upcomingEvents}`
+      },
+      { role: "user", content: prompt },
+    ],
+  });
+
+  eventId = deleteEventCompletion.choices[0].message.content;
+  console.log(eventId);
+
+  const auth = new google.auth.OAuth2();
+  auth.setCredentials({ access_token: accessToken });
+  const calendar = google.calendar({ version: 'v3', auth });
+
+  try {
+    await calendar.events.delete({
+      calendarId: 'primary',
+      eventId: eventId,
+    });
+
+    console.log(`Event with ID ${eventId} deleted successfully.`);
+    return true;
+  } catch (error) {
+    console.error('Error deleting event:', error);
+    return false;
+  }
+}
+
+// Function to update an event on the user's Google Calendar
+async function updateEvent(accessToken, prompt, currentDate, upcomingEvents) {
+
+  const updateEventCompletion = await openaiClient.chat.completions.create({
+    model: "gpt-3.5-turbo",
+    messages: [
+      {
+        role: "system",
+        content: `You are an assistant that updates events using Google Calendar.
+            The current date/time is ${currentDate}.
+            When asked to update an event, you will:
+            1. Identify the correct event to update based on user input and the upcoming events list.
+            2. Respond with a JSON object containing:
+               - The event ID (eventId).
+               - The updated event details (summary, startTime, endTime). 
+               Like the following: ${updateEventFormat}
+            
+            Following are the user's upcoming events with their IDs: ${upcomingEvents}`
+      },
+      { role: "user", content: prompt },
+    ],
+    response_format: {type: "json_object"}
+  });
+
+  const { eventId, updatedEvent } = JSON.parse(updateEventCompletion.choices[0].message.content);
+  console.log(eventId);
+
+  const auth = new google.auth.OAuth2();
+  auth.setCredentials({ access_token: accessToken });
+  const calendar = google.calendar({ version: 'v3', auth });
+
+  try {
+    const response = await calendar.events.update({
+      calendarId: 'primary',
+      eventId: eventId,
+      requestBody: {
+        summary: updatedEvent.summary,
+        start: { dateTime: updatedEvent.startTime },
+        end: { dateTime: updatedEvent.endTime },
+      },
+    });
+
+    console.log(`Event with ID ${eventId} updated successfully.`);
+    return response.data;
+  } catch (error) {
+    console.error('Error updating event:', error);
+    return null;
+  }
+}
 
 
 // Google Authentication Route
@@ -183,16 +277,22 @@ app.post("/api/openai", async (req, res) => {
   }
   const access_token = authHeader.split(" ")[1];
 
+  // Store upcoming events to provide in OpenAI call.
+  var upcomingEvents = await getUpcomingEvents(access_token);
+  upcomingEvents = JSON.stringify(upcomingEvents);
+
   // Determine which action the user wishes to perform
   const calendarAction = await selectAction(prompt);
 
   if (calendarAction == "CREATE_EVENT") {
     createEvent(access_token, prompt, currentDate);
   }
-
-  // Store upcoming events to provide in OpenAI call.
-  var upcomingEvents = await getUpcomingEvents(access_token);
-  upcomingEvents = JSON.stringify(upcomingEvents);
+  else if (calendarAction == "DELETE_EVENT") {
+    deleteEvent(access_token, prompt, currentDate, upcomingEvents)
+  }
+  else if (calendarAction == "UPDATE_EVENT"){
+    updateEvent(access_token, prompt, currentDate, upcomingEvents)
+  }
 
   // OpenAI call to provide the user a response in the chat. 
   const userResponse = await openaiClient.chat.completions.create({
@@ -201,10 +301,10 @@ app.post("/api/openai", async (req, res) => {
       {
         role: "system",
         content: `You are an AI assistant that helps schedule events using Google Calendar.
-        The current date/time is ${currentDate}.  Please provide a short, concise, and friendly response to the user input,
-        confirming that their intended action is now completed. 
-        Information on the user's upcoming schedule is attached: ${upcomingEvents}. Only refer to it if the users
-        specifically asks something about their schedule (ex. upcoming events, how to optimize, etc.)`},
+        The current date/time is ${currentDate}.  Please provide a concise and friendly response
+        confirming that the intended action is now completed. Information on the user's upcoming schedule: ${upcomingEvents}. 
+        Only refer to this information if the user specifically asks something about their schedule 
+        (ex. upcoming events, how to optimize, etc.). Notifications/reminders are only set upon explicit user demand.`},
       { role: "user", content: prompt },
     ]
   })
