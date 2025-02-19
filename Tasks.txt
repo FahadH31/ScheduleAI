@@ -1,5 +1,9 @@
 - Only reload iframe on backend action completion.
 
+- Info bubbles to
+    1. Inform user about features (create or update single events, delete multiple events)
+    2. Disclaimer about viewing events in the iframe if calendar is not public.
+
 - Store chat history in session storage.
 
 - Smooth sign-in/authentication process. Less clicks and reauthentication.
@@ -17,7 +21,6 @@ Future Potential:
 
 Limitations:
 - Need to make calendar public to display it in the IFrame.
-    - Perhaps a workaround can be found (ex. open the user's calendar in a popup)
 - Only create/update one event a time.
 
 

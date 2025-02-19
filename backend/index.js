@@ -174,14 +174,12 @@ async function deleteEvents(accessToken, prompt, currentDate, upcomingEvents) {
 
   eventIds = deleteEventCompletion.choices[0].message.content;
   var eventIdArray = eventIds.split(',').map(id => id.trim());
-  console.log(eventIdArray);
 
   const auth = new google.auth.OAuth2();
   auth.setCredentials({ access_token: accessToken });
   const calendar = google.calendar({ version: 'v3', auth });
 
   for (i = 0; i < eventIdArray.length; i++) {
-    console.log(eventIdArray[i]);
     try {
       await calendar.events.delete({
         calendarId: 'primary',
