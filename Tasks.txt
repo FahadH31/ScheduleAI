@@ -1,12 +1,10 @@
-- Add more features to update function.
+- Only reload iframe on backend action completion.
 
 - Store chat history in session storage.
 
 - Smooth sign-in/authentication process. Less clicks and reauthentication.
 
 - Add conversation history in backend openai chat.
-
-- Control event colors.
 
 - Voice input.
 

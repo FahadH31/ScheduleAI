@@ -11,6 +11,7 @@ const createEventFormat = `
   "summary": "Google I/O 2015",
   "location": "800 Howard St., San Francisco, CA 94103",
   "description": "A chance to hear more about Google\'s developer products.",
+  "colorId": A number from 1-11, 
   "start": {
     "dateTime": "2015-05-28T09:00:00-07:00",
     "timeZone": "America/Los_Angeles",
@@ -33,12 +34,6 @@ const createEventFormat = `
       {"method": "popup", "minutes": 10},
     ],
   },`
-
-const updateEventFormat = `
-  "summary": "Updated Meeting Summary",
-  "startTime": "2025-02-20T10:00:00Z",
-  "endTime": "2025-02-20T11:00:00Z"
-`
 
 // Initialize OpenAI Client
 const openaiClient = new OpenAI({
@@ -214,11 +209,14 @@ async function updateEvent(accessToken, prompt, currentDate, upcomingEvents) {
             The current date/time is ${currentDate}.
             When asked to update an event, you will:
             1. Identify the correct event to update based on user input and the upcoming events list.
-            2. Respond with a JSON object containing:
-               - The event ID (eventId).
-               - The updated event details (summary, startTime, endTime). 
-               Like the following: ${updateEventFormat}
-            
+            2. Respond ONLY with a JSON object in this format:
+                  {
+                    "eventId": "EVENT_ID_HERE",
+                    "updatedEvent": {
+                      ${createEventFormat}
+                    }
+                  }
+            Fill the details as you deem appropriate based on the user input. If a field is unchanged, provide the original value.
             Following are the user's upcoming events with their IDs: ${upcomingEvents}`
       },
       { role: "user", content: prompt },
@@ -226,15 +224,15 @@ async function updateEvent(accessToken, prompt, currentDate, upcomingEvents) {
     response_format: { type: "json_object" }
   });
 
+  console.log(updateEventCompletion.choices[0].message.content);
   const { eventId, updatedEvent } = JSON.parse(updateEventCompletion.choices[0].message.content);
-  console.log(eventId);
 
   const auth = new google.auth.OAuth2();
   auth.setCredentials({ access_token: accessToken });
   const calendar = google.calendar({ version: 'v3', auth });
 
   try {
-    const response = await calendar.events.update({
+    const response = await calendar.events.patch({
       calendarId: 'primary',
       eventId: eventId,
       requestBody: {
@@ -307,11 +305,12 @@ app.post("/api/openai", async (req, res) => {
           role: "system",
           content: `You are an AI assistant that helps schedule events using Google Calendar.
         The current date/time is ${currentDate}.  Please provide a concise and friendly response
-        confirming that the intended action is now completed. Information on the user's upcoming schedule: ${upcomingEvents}. 
+        confirming that the intended action is now being performed. Information on the user's upcoming schedule: ${upcomingEvents}. 
         Only refer to this information if the user specifically asks something about their schedule 
         (ex. upcoming events, how to optimize, etc.). 
         Notifications/reminders are only set upon explicit user demand. Never provide the user with 
-        their upcoming schedule data in the chat, since it isn't formatted for user reading.`},
+        their upcoming schedule data in the chat, since it isn't formatted for user reading. Don't use any text
+        formatting or code blocks.`},
         { role: "user", content: prompt },
       ],
       stream: true,
