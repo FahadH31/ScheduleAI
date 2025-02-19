@@ -5,12 +5,11 @@ function GoogleCalendarIFrame() {
     return (
         <iframe 
             title= "Calendar"
-            src= {`https://calendar.google.com/calendar/embed?src=${email_address}`}
-            className="w-3/4 h-full"
+            src= {`https://calendar.google.com/calendar/embed?src=${email_address}&mode=AGENDA&showPrint=0&showCalendars=0&showTz=0`}
+            className="w-[90%] h-full"
         >
         </iframe>
     );
 }
-
 
 export default GoogleCalendarIFrame;

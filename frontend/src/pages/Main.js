@@ -1,39 +1,41 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { getOpenAIResponse } from "../components/OpenAICall";
-import GoogleCalendarIFrame from "../components/GoogleCalendarIFrame"
+import GoogleCalendarIFrame from "../components/GoogleCalendarIFrame";
 
 function Main() {
   const [inputText, setInputText] = useState("");
   const [responses, setResponses] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [iframeKey, setIframeKey] = useState(Date.now()); // Key to force iframe reload
+  const lastResponseRef = useRef("");
 
   const handleInputChange = (e) => setInputText(e.target.value);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!inputText.trim()) return;
-  
+
     setLoading(true);
-  
+
     // Initialize new response object
     const newResponse = { user: inputText, ai: "" };
     setResponses((prev) => [...prev, newResponse]);
-  
+
     try {
       await getOpenAIResponse(inputText, (chunk) => {
         setResponses((prev) => {
           const updatedResponses = [...prev];
-  
+
           // Ensure only the latest response is updated
           updatedResponses[updatedResponses.length - 1] = {
             ...updatedResponses[updatedResponses.length - 1],
             ai: updatedResponses[updatedResponses.length - 1].ai + chunk,
           };
-  
+
           return updatedResponses;
         });
       });
-  
+
       setInputText("");
     } catch (error) {
       console.error("Error fetching OpenAI response:", error);
@@ -45,7 +47,6 @@ function Main() {
       setLoading(false);
     }
   };
-  
 
   const handleKeyPress = (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -54,13 +55,33 @@ function Main() {
     }
   };
 
+  // Effect to reload iframe when AI response is updated
+  useEffect(() => {
+    const latestResponse = responses[responses.length - 1]?.ai || "";
+
+    // Check if the latest AI response has changed
+    if (latestResponse && latestResponse !== lastResponseRef.current) {
+      lastResponseRef.current = latestResponse; // Update the ref
+
+      // Reload the iframe after a short delay (ensure event was scheduled)
+      const reloadDelay = 500;
+      const timeoutId = setTimeout(() => {
+        setIframeKey(Date.now()); // Update the key to force iframe reload
+      }, reloadDelay);
+
+      // Cleanup timeout on unmount or if response changes again
+      return () => clearTimeout(timeoutId);
+    }
+  }, [responses]);
+
   return (
     <div className="flex w-full h-screen bg-gray-900 text-white">
-      <GoogleCalendarIFrame />
+      {/* Pass the key prop to force iframe reload */}
+      <GoogleCalendarIFrame key={iframeKey} />
       <div className="flex flex-col w-1/2 p-6 space-y-4">
         <h1 className="text-3xl font-semibold text-center">Google Calendar AI Assistant</h1>
         <div className="flex-grow bg-gray-800 p-5 rounded-lg shadow-lg border border-gray-700 overflow-y-auto custom-scrollbar">
-          <h2 className="text-lg font-medium mb-3">Chat History</h2>
+          <h2 className="text-lg font-medium mb-3">Chat</h2>
           <div className="space-y-4">
             {responses.length > 0 ? (
               responses.map((response, index) => (
@@ -75,7 +96,7 @@ function Main() {
                 </div>
               ))
             ) : (
-              <p className="text-gray-400">Start a conversation to see responses!</p>
+              <p className="text-gray-400">Start a conversation to manage your schedule!</p>
             )}
           </div>
         </div>

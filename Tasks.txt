@@ -1,23 +1,28 @@
+Fix Bug:
+- Deleting Event Bug:
+Seems to only happen (sometimes) to events not created during the current session/auth. 
+For example if I log out and back in. Doesn't occur if I create an event straight from the GC app.
+Doesn't happen with updates.
+
 - Delete recurring events in one command.
 
 - Store chat history in session storage.
 
-- Reload calendar automatically once openai updates the calendar.
+- Smooth sign-in/authentication process. Less clicks and reauthentication.
 
-- Add conversation history for openai chat.
+- Add conversation history in backend openai chat.
 
-- Display via IFrame & Public Calendar. Get user's account dynamically.
+- Control event colors.
 
-- Control event colors if possible.
+- Voice input.
 
 
 Future Potential:
-- Voice chat 
 - Support for tasks
 - Support for calendars other than primary
 
+Limitations:
+- Need to make calendar public to display it in the IFrame.
+    - Perhaps a workaround can be found (ex. open the user's calendar in a popup)
 
-Deleting Event Bug:
-- Seems to only happen (sometimes) to events not created during the current session/auth. 
-For example if I log out and back in. Doesn't occur if I create an event straight from the GC app.
-Doesn't happen to updates.
+
