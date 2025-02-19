@@ -64,7 +64,7 @@ function Main() {
       lastResponseRef.current = latestResponse; // Update the ref
 
       // Reload the iframe after a short delay (ensure event was scheduled)
-      const reloadDelay = 500;
+      const reloadDelay = 1000;
       const timeoutId = setTimeout(() => {
         setIframeKey(Date.now()); // Update the key to force iframe reload
       }, reloadDelay);
@@ -79,9 +79,8 @@ function Main() {
       {/* Pass the key prop to force iframe reload */}
       <GoogleCalendarIFrame key={iframeKey} />
       <div className="flex flex-col w-1/2 p-6 space-y-4">
-        <h1 className="text-3xl font-semibold text-center">Google Calendar AI Assistant</h1>
+        <h1 className="text-2xl font-semibold text-center">Google Calendar AI Assistant</h1>
         <div className="flex-grow bg-gray-800 p-5 rounded-lg shadow-lg border border-gray-700 overflow-y-auto custom-scrollbar">
-          <h2 className="text-lg font-medium mb-3">Chat</h2>
           <div className="space-y-4">
             {responses.length > 0 ? (
               responses.map((response, index) => (
@@ -102,7 +101,7 @@ function Main() {
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
           <textarea
-            className="w-full p-3 rounded-lg bg-gray-700 text-white text-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full p-3 rounded-lg bg-gray-700 text-white text-md resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder="Type your message here..."
             value={inputText}
             onChange={handleInputChange}
@@ -110,7 +109,7 @@ function Main() {
           ></textarea>
           <button
             type="submit"
-            className="w-full py-3 rounded-lg bg-blue-500 hover:bg-blue-600 text-white font-semibold text-lg transition-all disabled:opacity-50"
+            className="w-full py-3 rounded-lg bg-blue-500 hover:bg-blue-600 text-white font-semibold text-md transition-all disabled:opacity-50"
             disabled={loading}
           >
             {loading ? "Sending..." : "Send"}

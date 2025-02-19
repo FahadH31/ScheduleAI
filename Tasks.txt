@@ -1,10 +1,4 @@
-Fix Bug:
-- Deleting Event Bug:
-Seems to only happen (sometimes) to events not created during the current session/auth. 
-For example if I log out and back in. Doesn't occur if I create an event straight from the GC app.
-Doesn't happen with updates.
-
-- Delete recurring events in one command.
+- Add more features to update function.
 
 - Store chat history in session storage.
 
@@ -16,6 +10,8 @@ Doesn't happen with updates.
 
 - Voice input.
 
+- Mobile Styling Support
+
 
 Future Potential:
 - Support for tasks
@@ -24,5 +20,6 @@ Future Potential:
 Limitations:
 - Need to make calendar public to display it in the IFrame.
     - Perhaps a workaround can be found (ex. open the user's calendar in a popup)
+- Only create/update one event a time.
 
 

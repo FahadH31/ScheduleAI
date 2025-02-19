@@ -67,7 +67,7 @@ const selectAction = async (prompt) => {
         content: `
         Classify the user's intent into one of the following categories: 
         - "CREATE_EVENT": If the user wants to create or schedule an event.
-        - "DELETE_EVENT": If the user wants to delete an event.
+        - "DELETE_EVENT": If the user wants to delete any event(s).
         - "UPDATE_EVENT": If the user wants to update an event.
         - "OTHER": For all other requests."
         ONLY return the classifier, nothing else, regardless of the user input.
@@ -160,7 +160,7 @@ async function createEvent(accessToken, prompt, currentDate) {
 }
 
 // Function to delete an event from the user's Google Calendar
-async function deleteEvent(accessToken, prompt, currentDate, upcomingEvents) {
+async function deleteEvents(accessToken, prompt, currentDate, upcomingEvents) {
 
   const deleteEventCompletion = await openaiClient.chat.completions.create({
     model: "gpt-3.5-turbo",
@@ -169,33 +169,37 @@ async function deleteEvent(accessToken, prompt, currentDate, upcomingEvents) {
         role: "system",
         content: `You are an assistant that deletes events using Google Calendar. 
             The current date/time is ${currentDate}. 
-            When asked to delete an event, you will identify the correct event to delete and respond 
-            with ONLY the event id, regardless of user input. 
+            When asked to delete any number of events, you will identify the correct events to delete 
+            and respond with ONLY the event ids in a comma seperated list, regardless of user input. 
             Following are the user's upcoming events with their IDs: ${upcomingEvents}`
       },
       { role: "user", content: prompt },
     ],
   });
 
-  eventId = deleteEventCompletion.choices[0].message.content;
-  console.log(eventId);
+  eventIds = deleteEventCompletion.choices[0].message.content;
+  var eventIdArray = eventIds.split(',').map(id => id.trim());
+  console.log(eventIdArray);
 
   const auth = new google.auth.OAuth2();
   auth.setCredentials({ access_token: accessToken });
   const calendar = google.calendar({ version: 'v3', auth });
 
-  try {
-    await calendar.events.delete({
-      calendarId: 'primary',
-      eventId: eventId,
-    });
+  for (i = 0; i < eventIdArray.length; i++) {
+    console.log(eventIdArray[i]);
+    try {
+      await calendar.events.delete({
+        calendarId: 'primary',
+        eventId: eventIdArray[i],
+      });
 
-    console.log(`Event with ID ${eventId} deleted successfully.`);
-    return true;
-  } catch (error) {
-    console.error('Error deleting event:', error);
-    return false;
+      console.log(`Event with ID ${eventIdArray[i]} deleted successfully.`);
+    } catch (error) {
+      console.error('Error deleting event:', error);
+      return false;
+    }
   }
+  return true;
 }
 
 // Function to update an event on the user's Google Calendar
@@ -288,7 +292,7 @@ app.post("/api/openai", async (req, res) => {
     createEvent(access_token, prompt, currentDate);
   }
   else if (calendarAction == "DELETE_EVENT") {
-    deleteEvent(access_token, prompt, currentDate, upcomingEvents)
+    deleteEvents(access_token, prompt, currentDate, upcomingEvents)
   }
   else if (calendarAction == "UPDATE_EVENT") {
     updateEvent(access_token, prompt, currentDate, upcomingEvents)
