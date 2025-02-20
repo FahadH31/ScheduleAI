@@ -53,9 +53,9 @@ app.use(cors());
 app.use(express.json());
 
 // Function to determine which operation the user would like to perform (create, update, delete, etc.)
-const selectAction = async (prompt) => {
+const selectAction = async (prompt, upcomingEvents) => {
   const classifyAction = await openaiClient.chat.completions.create({
-    model: "gpt-3.5-turbo",
+    model: "gpt-4o-mini",
     messages: [
       {
         role: "system",
@@ -63,9 +63,10 @@ const selectAction = async (prompt) => {
         Classify the user's intent into one of the following categories: 
         - "CREATE_EVENT": If the user wants to create or schedule an event.
         - "DELETE_EVENT": If the user wants to delete any event(s).
-        - "UPDATE_EVENT": If the user wants to update an event.
-        - "OTHER": For all other requests."
-        ONLY return the classifier, nothing else, regardless of the user input.
+        - "UPDATE_EVENT": If the user provides additional information for an existing event.
+        - "OTHER": For all other requests.
+        ONLY return the classifier, nothing else, regardless of the user input. Here is the user's schedule
+        information as context to help you decide ${upcomingEvents}: 
         `,
       },
       { role: "user", content: prompt },
@@ -199,7 +200,7 @@ async function deleteEvents(accessToken, prompt, currentDate, upcomingEvents) {
 async function updateEvent(accessToken, prompt, currentDate, upcomingEvents) {
 
   const updateEventCompletion = await openaiClient.chat.completions.create({
-    model: "gpt-3.5-turbo",
+    model: "gpt-4o-mini",
     messages: [
       {
         role: "system",
@@ -233,11 +234,7 @@ async function updateEvent(accessToken, prompt, currentDate, upcomingEvents) {
     const response = await calendar.events.patch({
       calendarId: 'primary',
       eventId: eventId,
-      requestBody: {
-        summary: updatedEvent.summary,
-        start: { dateTime: updatedEvent.startTime },
-        end: { dateTime: updatedEvent.endTime },
-      },
+      resource: updatedEvent,
     });
 
     console.log(`Event with ID ${eventId} updated successfully.`);
@@ -282,7 +279,7 @@ app.post("/api/openai", async (req, res) => {
   upcomingEvents = JSON.stringify(upcomingEvents);
 
   // Determine which action the user wishes to perform
-  const calendarAction = await selectAction(prompt);
+  const calendarAction = await selectAction(prompt, upcomingEvents);
 
   if (calendarAction == "CREATE_EVENT") {
     createEvent(access_token, prompt, currentDate);
