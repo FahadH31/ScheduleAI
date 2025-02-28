@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { getOpenAIResponse } from "./OpenAICall";
 
 const Chat = () => {
@@ -8,11 +8,13 @@ const Chat = () => {
         return savedHistory ? JSON.parse(savedHistory) : [];
     });
     const [loading, setLoading] = useState(false);
+    const messagesEndRef = useRef(null);
 
 
-    // Save to session storage whenever responses change
+    // Save to session storage & keep chat scrolled at bottom whenever responses change
     useEffect(() => {
         sessionStorage.setItem("chatHistory", JSON.stringify(responses));
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [responses]);
 
     const handleInputChange = (e) => setInputText(e.target.value);
@@ -90,11 +92,18 @@ const Chat = () => {
                 </svg>
             </button>
             <div className="mb-4 flex-grow bg-gray-800 p-5 rounded-lg shadow-lg border border-gray-700 overflow-y-auto custom-scrollbar relative">
-                <div className="space-y-4">
+                <div className="space-y-3">
+                    <div className="self-start max-w-xs bg-gray-700 p-3 rounded-lg shadow-md">
+                        <p className="text-sm font-semibold text-green-400">Calendar Assistant</p>
+                        <p>Welcome to the Google Calendar AI Assistant!
+                            Effortlessly create, update, and delete events on your Google Calendar with simple prompts.
+                            Need advice on optimizing or improving your schedule? Feel free to ask!
+                        </p>
+                    </div>
                     {responses.length > 0 ? (
                         responses.map((response, index) => (
                             <div key={index} className="flex flex-col space-y-2">
-                                <div className="self-end max-w-xs bg-blue-500 text-white p-3 rounded-lg shadow-md">
+                                <div className="self-end max-w-xs bg-blue-500 text-white p-3 rounded-lg shadow-md mb-1">
                                     <p>{response.user}</p>
                                 </div>
                                 <div className="self-start max-w-xs bg-gray-700 p-3 rounded-lg shadow-md">
@@ -107,6 +116,7 @@ const Chat = () => {
                         <p className="text-gray-400">Start a conversation to manage your schedule!</p>
                     )}
                 </div>
+                <div ref={messagesEndRef} /> {/* An invisible div to set viewpoint at the bottom of the chat when new messages come in */}
             </div>
             <form onSubmit={handleSubmit} className="space-y-4">
                 <textarea

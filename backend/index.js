@@ -55,7 +55,7 @@ app.use(express.json());
 // Function to determine which operation the user would like to perform (create, update, delete, etc.)
 const selectAction = async (prompt, upcomingEvents) => {
   const classifyAction = await openaiClient.chat.completions.create({
-    model: "gpt-4o-mini",
+    model: "gpt-4o",
     messages: [
       {
         role: "system",
@@ -64,7 +64,8 @@ const selectAction = async (prompt, upcomingEvents) => {
         - "CREATE_EVENT": If the user wants to create or schedule an event.
         - "DELETE_EVENT": If the user wants to delete any event(s).
         - "UPDATE_EVENT": If the user provides additional information for an existing event.
-        - "OTHER": For all other requests.
+        - "OTHER": For all other requests. Select this option if the user attempts to create or update multiple unique events at once 
+        (this doesn't apply for recurring events).
         ONLY return the classifier, nothing else, regardless of the user input. Here is the user's schedule
         information as context to help you decide ${upcomingEvents}: 
         `,
@@ -88,7 +89,7 @@ async function getUpcomingEvents(accessToken) {
     const response = await calendar.events.list({
       calendarId: 'primary',
       timeMin: new Date().toISOString(),
-      maxResults: 10,
+      maxResults: 15,
       singleEvents: true,
       orderBy: 'startTime',
     });
@@ -236,7 +237,7 @@ async function updateEvent(accessToken, prompt, currentDate, upcomingEvents) {
       eventId: eventId,
       resource: updatedEvent,
     });
-
+    
     console.log(`Event with ID ${eventId} updated successfully.`);
     return response.data;
   } catch (error) {
@@ -282,13 +283,13 @@ app.post("/api/openai", async (req, res) => {
   const calendarAction = await selectAction(prompt, upcomingEvents);
 
   if (calendarAction == "CREATE_EVENT") {
-    createEvent(access_token, prompt, currentDate);
+    await createEvent(access_token, prompt, currentDate);
   }
   else if (calendarAction == "DELETE_EVENT") {
-    deleteEvents(access_token, prompt, currentDate, upcomingEvents)
+    await deleteEvents(access_token, prompt, currentDate, upcomingEvents)
   }
   else if (calendarAction == "UPDATE_EVENT") {
-    updateEvent(access_token, prompt, currentDate, upcomingEvents)
+    await updateEvent(access_token, prompt, currentDate, upcomingEvents)
   }
 
   try {
@@ -301,11 +302,11 @@ app.post("/api/openai", async (req, res) => {
           content: `You are an AI assistant that helps schedule events using Google Calendar.
         The current date/time is ${currentDate}.  Please provide a concise and friendly response
         confirming that the intended action is now being performed. Information on the user's upcoming schedule: ${upcomingEvents}. 
-        Only refer to this information if the user specifically asks something about their schedule 
-        (ex. upcoming events, how to optimize, etc.). 
+        Only refer to this information if the user specifically asks something about their schedule.(ex. upcoming events, how to optimize, etc.) 
         Notifications/reminders are only set upon explicit user demand. Never provide the user with 
-        their upcoming schedule data in the chat, since it isn't formatted for user reading. Don't use any text
-        formatting or code blocks.`},
+        their upcoming schedule data in the chat, it isn't formatted for user reading. Don't use any text
+        formatting or code blocks. If the user attempts to create or update multiple unique events at once, inform them that this isn't
+        possible, only 1 event can be created or updated at a time. Multiple events can however be deleted at once.`},
         { role: "user", content: prompt },
       ],
       stream: true,

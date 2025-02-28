@@ -1,27 +1,18 @@
-- Only reload iframe on backend action completion.
-
-- Auto scroll chat.
-
-- Info bubbles to
-    1. Inform user about features (create or update single events, delete multiple events)
-    2. Disclaimer about viewing events in the iframe if calendar is not public.
-
-- Smooth sign-in/authentication process. Less clicks and reauthentication.
-
+Current To Do:
 - Add conversation history in backend openai chat.
-
-- Voice input.
-
-- Mobile Styling Support
-
+- Refresh token to avoid failed calendar calls after logged in for extended period of time.
+- Mobile styling support.
+- Smooth sign-in/authentication process. Less clicks and reauthentication (and publish app).
+- Deploy.
 
 Future Potential:
-- Support for tasks
-- Support for calendars other than primary
+- Support for tasks.
+- Support for calendars other than primary.
+- Option for voice input.
 
 Limitations:
-- Need to make calendar public to display it in the IFrame.
-- Only create/update one event a time.
-- Currently deletes/updates only future events.
+- Can only create/update one event a time.
+- There is a limit on the number of events the AI has access to at any given time (15 events).
+- Only deletes/updates future events.
 
 

@@ -23,9 +23,9 @@ export const getOpenAIResponse = async (prompt, onStreamData) => {
 
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
-    
+
     let fullResponse = "";
-    
+
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
@@ -34,11 +34,12 @@ export const getOpenAIResponse = async (prompt, onStreamData) => {
 
       // Append chunk properly
       fullResponse += chunk;
-      
+
       // Pass only the new chunk, avoiding duplication
       onStreamData(chunk);
     }
 
+    window.location.reload(); // Reload the page to update the iframe
     return fullResponse;
   } catch (error) {
     console.error("Error calling OpenAI API:", error.response?.data || error.message);
