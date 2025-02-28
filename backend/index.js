@@ -1,7 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const OpenAI = require("openai");
-const { OAuth2Client, auth } = require('google-auth-library');
+const { OAuth2Client } = require('google-auth-library');
 const { google } = require('googleapis');
 const date = require('date-and-time');
 require('dotenv').config();
@@ -35,6 +35,8 @@ const createEventFormat = `
     ],
   },`
 
+const conversationHistory = [];
+
 // Initialize OpenAI Client
 const openaiClient = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
@@ -61,21 +63,22 @@ const selectAction = async (prompt, upcomingEvents) => {
         role: "system",
         content: `
         Classify the user's intent into one of the following categories: 
-        - "CREATE_EVENT": If the user wants to create or schedule an event.
+        - "CREATE_EVENT": If the user wants to create or schedule an event. Or, if they describe an upcoming event that doesn't already exist.
         - "DELETE_EVENT": If the user wants to delete any event(s).
         - "UPDATE_EVENT": If the user provides additional information for an existing event.
-        - "OTHER": For all other requests. Select this option if the user attempts to create or update multiple unique events at once 
-        (this doesn't apply for recurring events).
-        ONLY return the classifier, nothing else, regardless of the user input. Here is the user's schedule
-        information as context to help you decide ${upcomingEvents}: 
+        - "OTHER": For all other requests.
+        ONLY return the classifier, nothing else, regardless of the user input. 
+        Here is the user's schedule information as context to help you in the classification: ${upcomingEvents}. 
+        You will now be provided with the user's latest few messages. Act on the newest one, using prior ones as context.
         `,
       },
+      ...conversationHistory,
       { role: "user", content: prompt },
     ]
   })
 
   const action = classifyAction.choices[0].message.content;
-  console.log(action);
+  console.log("Action Classification:", action);
   return action;
 }
 
@@ -89,7 +92,7 @@ async function getUpcomingEvents(accessToken) {
     const response = await calendar.events.list({
       calendarId: 'primary',
       timeMin: new Date().toISOString(),
-      maxResults: 15,
+      maxResults: 20,
       singleEvents: true,
       orderBy: 'startTime',
     });
@@ -121,20 +124,23 @@ async function createEvent(accessToken, prompt, currentDate) {
 
   // Generate the structured event data from user input, via an OpenAI call. 
   const createEventCompletion = await openaiClient.chat.completions.create({
-    model: "gpt-3.5-turbo",
+    model: "gpt-4o-mini",
     messages: [
       {
         role: "system",
-        content: `You are an assistant that creates events using Google Calendar. 
-            The current date/time is ${currentDate}. 
-            When asked to create an event, you will ONLY respond in a structured format, exactly like the following example: 
-            ${createEventFormat}. The only mandatory fields are the start and end time (in (ISO 8601 format), use 30 minutes as the default length.
-            Fill the other fields as you deem suitable. Don't set notifications or an email address unless explicitly told to do so. Assume the timezone is EST.` },
+        content: `
+        You are an assistant that creates events using Google Calendar. 
+            - The current date/time is ${currentDate}. 
+            - When asked to create an event, you will ONLY respond in a structured format, exactly like the following example: ${createEventFormat}. 
+            - The only mandatory fields are the start and end time (in ISO 8601 format), use 30 minutes as the default length.
+            - Fill the other fields as you deem suitable. Don't set notifications, email addresses, locations, or recurring events unless explicitly told to do so. 
+            Assume the timezone is EST. Ensure the dates exist in the calendar (e.g no February 29th in non-leap years).` },
       { role: "user", content: prompt },
     ],
   });
 
   eventData = JSON.parse(createEventCompletion.choices[0].message.content);
+  console.log(eventData);
 
   // Insert the data 
   try {
@@ -206,7 +212,7 @@ async function updateEvent(accessToken, prompt, currentDate, upcomingEvents) {
       {
         role: "system",
         content: `You are an assistant that updates events using Google Calendar.
-            The current date/time is ${currentDate}.
+            The current date/time is ${currentDate}. 
             When asked to update an event, you will:
             1. Identify the correct event to update based on user input and the upcoming events list.
             2. Respond ONLY with a JSON object in this format:
@@ -217,6 +223,8 @@ async function updateEvent(accessToken, prompt, currentDate, upcomingEvents) {
                     }
                   }
             Fill the details as you deem appropriate based on the user input. If a field is unchanged, provide the original value.
+            Don't change the location, time, recurrence, or color unless explicitly told to do so.
+            Ensure the dates exist in the calendar (e.g no February 29th in non-leap years).
             Following are the user's upcoming events with their IDs: ${upcomingEvents}`
       },
       { role: "user", content: prompt },
@@ -237,7 +245,7 @@ async function updateEvent(accessToken, prompt, currentDate, upcomingEvents) {
       eventId: eventId,
       resource: updatedEvent,
     });
-    
+
     console.log(`Event with ID ${eventId} updated successfully.`);
     return response.data;
   } catch (error) {
@@ -262,6 +270,13 @@ app.post("/api/openai", async (req, res) => {
     return res
       .status(400)
       .json({ success: false, error: "Invalid or missing 'prompt' field" });
+  }
+
+  conversationHistory.push({ role: "user", content: prompt }); // Add the user input to the conversation history
+
+  // Limit length of the conversation history
+  if (conversationHistory.length > 8) {
+    conversationHistory.shift(); // remove the oldest message
   }
 
   // Get the current date/time.
@@ -295,18 +310,18 @@ app.post("/api/openai", async (req, res) => {
   try {
     // OpenAI call to provide the user a response in the chat. 
     const userResponseCompletion = await openaiClient.chat.completions.create({
-      model: "gpt-4o",
+      model: "gpt-4o-mini",
       messages: [
         {
           role: "system",
           content: `You are an AI assistant that helps schedule events using Google Calendar.
-        The current date/time is ${currentDate}.  Please provide a concise and friendly response
-        confirming that the intended action is now being performed. Information on the user's upcoming schedule: ${upcomingEvents}. 
-        Only refer to this information if the user specifically asks something about their schedule.(ex. upcoming events, how to optimize, etc.) 
-        Notifications/reminders are only set upon explicit user demand. Never provide the user with 
-        their upcoming schedule data in the chat, it isn't formatted for user reading. Don't use any text
-        formatting or code blocks. If the user attempts to create or update multiple unique events at once, inform them that this isn't
-        possible, only 1 event can be created or updated at a time. Multiple events can however be deleted at once.`},
+        - The current date/time is ${currentDate}.
+        - Please provide a concise and friendly response confirming that the intended action is now being performed. 
+        - Information on the user's upcoming schedule: ${upcomingEvents}. Only refer to this information if the user specifically asks something about their schedule.(ex. upcoming events, how to optimize, etc.)  
+        - Never provide the user with their upcoming schedule data directly in the chat. 
+        - Don't use any text formatting or code blocks. 
+        You will now be provided with the user's latest few messages. Respond to the newest one.`},
+        ...conversationHistory,
         { role: "user", content: prompt },
       ],
       stream: true,
@@ -318,7 +333,9 @@ app.post("/api/openai", async (req, res) => {
 
     for await (const chunk of userResponseCompletion) {
       if (chunk.choices[0]?.delta?.content) {
-        res.write(chunk.choices[0].delta.content);
+        const text = chunk.choices[0].delta.content;
+
+        res.write(text);  // Send response to frontend
       }
     }
 
