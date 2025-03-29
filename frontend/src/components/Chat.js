@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { getOpenAIResponse } from "./OpenAICall";
+import ReactMarkdown from "react-markdown";
 
 const Chat = () => {
     const [inputText, setInputText] = useState("");
@@ -9,7 +10,6 @@ const Chat = () => {
     });
     const [loading, setLoading] = useState(false);
     const messagesEndRef = useRef(null);
-
 
     // Save to session storage & keep chat scrolled at bottom whenever responses change
     useEffect(() => {
@@ -93,22 +93,29 @@ const Chat = () => {
             </button>
             <div className="mb-4 flex-grow bg-gray-800 p-5 rounded-lg shadow-lg border border-gray-700 overflow-y-auto custom-scrollbar relative">
                 <div className="space-y-3">
-                    <div className="self-start max-w-xs bg-gray-700 p-3 rounded-lg shadow-md">
+                    <div className="self-start max-w-md bg-gray-700 p-3 rounded-lg shadow-md">
                         <p className="text-sm font-semibold text-green-400">Calendar Assistant</p>
-                        <p>Welcome to the Google Calendar AI Assistant!
-                            Effortlessly create, update, and delete events on your Google Calendar with simple prompts.
-                            Need advice on optimizing or improving your schedule? Feel free to ask!
-                        </p>
+                        <div className="prose prose-invert prose-sm max-w-none">
+                            <ReactMarkdown>
+                                Welcome to the Google Calendar AI Assistant!
+                                Effortlessly create, update, and delete events on your Google Calendar with simple prompts.
+                                Need advice on optimizing or improving your schedule? Feel free to ask!
+                            </ReactMarkdown>
+                        </div>
                     </div>
                     {responses.length > 0 ? (
                         responses.map((response, index) => (
                             <div key={index} className="flex flex-col space-y-2">
-                                <div className="self-end max-w-xs bg-blue-500 text-white p-3 rounded-lg shadow-md mb-1">
+                                <div className="self-end max-w-md bg-blue-500 text-white p-3 rounded-lg shadow-md mb-1">
                                     <p>{response.user}</p>
                                 </div>
-                                <div className="self-start max-w-xs bg-gray-700 p-3 rounded-lg shadow-md">
+                                <div className="self-start max-w-md bg-gray-700 p-3 rounded-lg shadow-md">
                                     <p className="text-sm font-semibold text-green-400">Calendar Assistant</p>
-                                    <p>{response.ai}</p>
+                                    <div className="prose prose-invert prose-sm max-w-none">
+                                        <ReactMarkdown>
+                                            {response.ai}
+                                        </ReactMarkdown>
+                                    </div>
                                 </div>
                             </div>
                         ))
@@ -125,6 +132,7 @@ const Chat = () => {
                     value={inputText}
                     onChange={handleInputChange}
                     onKeyPress={handleKeyPress}
+                    rows={3}
                 ></textarea>
                 <div className="flex space-x-4">
                     <button

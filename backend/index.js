@@ -7,33 +7,34 @@ const date = require('date-and-time');
 require('dotenv').config();
 
 // Structured format to be used in OpenAI action calls 
-const createEventFormat = `
+const createEventFormat = `{
   "summary": "Google I/O 2015",
   "location": "800 Howard St., San Francisco, CA 94103",
   "description": "A chance to hear more about Google\'s developer products.",
   "colorId": A number from 1-11, 
   "start": {
     "dateTime": "2015-05-28T09:00:00-07:00",
-    "timeZone": "America/Los_Angeles",
+    "timeZone": "America/Los_Angeles"
   },
   "end": {
     "dateTime": "2015-05-28T17:00:00-07:00",
-    "timeZone": "America/Los_Angeles",
+    "timeZone": "America/Los_Angeles"
   },
   "recurrence": [
     "RRULE:FREQ=DAILY;COUNT=2"
   ],
   "attendees": [
     {"email": "lpage@example.com"},
-    {"email": "sbrin@example.com"},
+    {"email": "sbrin@example.com"}
   ],
   "reminders": {
     "useDefault": false,
     "overrides": [
-      {"method": "email", "minutes": 24 * 60},
-      {"method": "popup", "minutes": 10},
-    ],
-  },`
+      {"method": "email", "minutes": 1440},
+      {"method": "popup", "minutes": 10}
+    ]
+  }
+}`
 
 const conversationHistory = [];
 
@@ -104,12 +105,14 @@ async function getUpcomingEvents(accessToken) {
       return [];
     }
 
-    // Store only event ID, summary, start/endtime
+    // Store event information
     const eventSummaries = events.map(event => ({
       id: event.id,
       summary: event.summary,
       startTime: event.start,
-      endTime: event.start,
+      endTime: event.end,
+      location: event.location,
+      description: event.description,
     }));
 
     return eventSummaries;
@@ -122,24 +125,26 @@ async function getUpcomingEvents(accessToken) {
 // Function to create an event for the user's Google Calendar
 async function createEvent(accessToken, prompt, currentDate) {
   // Generate the structured event data from user input, via an OpenAI call. 
-  const createEventCompletion = await openaiClient.chat.completions.create({
-    model: "gpt-4o-mini",
-    messages: [
-      {
-        role: "system",
-        content: `
-        You are an assistant that creates events using Google Calendar. 
-            - The current date/time is ${currentDate}. 
-            - When asked to create an event, you will ONLY respond in a structured format, exactly like the following example: ${createEventFormat}.
-            - The only mandatory fields are the start and end time (in ISO 8601 format), use 30 minutes as the default length.
-            - Fill the other fields as you deem suitable. Don't set notifications, email addresses or recurring events unless explicitly told to do so.
-            - Don't set a location unless you can determine an appropriate one from the user's input (no made-up locations).
-            Assume the timezone is GMT-4 (Eastern Daylight Saving Time). Ensure the dates exist in the calendar (e.g no February 29th in non-leap years).` },
-      { role: "user", content: prompt },
-    ],
-  });
+    const createEventCompletion = await openaiClient.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        {
+          role: "system",
+          content: `
+          You are an assistant that creates events using Google Calendar.
+          - The current date/time is ${currentDate}.
+          - When asked to create an event, you will ONLY respond in a structured format, exactly like this JSON example:
+          ${createEventFormat}
+          - The only mandatory fields are the start and end time (in ISO 8601 format), use 30 minutes as the default length.
+          - Fill the other fields as you deem suitable. Don't set notifications, email addresses, or recurring events unless explicitly told to do so.
+          - Don't set a location unless you can determine an appropriate one from the user's input (no made-up locations).
+          - Assume the timezone is GMT-4 (Eastern Daylight Saving Time). Ensure the dates exist in the calendar (e.g., no February 29th in non-leap years).`
+        },
+        { role: "user", content: prompt },
+      ],
+    });
 
-  eventData = JSON.parse(createEventCompletion.choices[0].message.content);
+      eventData = JSON.parse(createEventCompletion.choices[0].message.content);
   console.log(eventData);
 
   // Insert the data 
@@ -156,6 +161,7 @@ async function createEvent(accessToken, prompt, currentDate) {
 
     console.log("Event created successfully");
     return { success: true, link: response.data.htmlLink };
+
   } catch (error) {
     console.error("Error creating event:", error);
     throw new Error("Failed to create Google Calendar event");
@@ -164,7 +170,6 @@ async function createEvent(accessToken, prompt, currentDate) {
 
 // Function to delete an event from the user's Google Calendar
 async function deleteEvents(accessToken, prompt, currentDate, upcomingEvents) {
-
   const deleteEventCompletion = await openaiClient.chat.completions.create({
     model: "gpt-3.5-turbo",
     messages: [
@@ -205,7 +210,6 @@ async function deleteEvents(accessToken, prompt, currentDate, upcomingEvents) {
 
 // Function to update an event on the user's Google Calendar
 async function updateEvent(accessToken, prompt, currentDate, upcomingEvents) {
-
   const updateEventCompletion = await openaiClient.chat.completions.create({
     model: "gpt-4o-mini",
     messages: [
@@ -254,7 +258,6 @@ async function updateEvent(accessToken, prompt, currentDate, upcomingEvents) {
   }
 }
 
-
 // Google Authentication Route
 app.post("/api/google-auth", async (req, res) => {
   const { tokens } = await oAuth2Client.getToken(req.body.tokenResponse); // Exchange code for tokens  
@@ -296,7 +299,7 @@ app.post("/api/openai", async (req, res) => {
 
   // Determine which action the user wishes to perform
   const calendarAction = await selectAction(prompt, upcomingEvents);
-
+  
   if (calendarAction == "CREATE_EVENT") {
     await createEvent(access_token, prompt, currentDate);
   }
@@ -308,22 +311,21 @@ app.post("/api/openai", async (req, res) => {
   }
 
   try {
-    // OpenAI call to provide the user a response in the chat. 
+    // OpenAI call to provide the user a response in the chat.
     const userResponseCompletion = await openaiClient.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
         {
           role: "system",
           content: `
-          You are an AI assistant that helps schedule events using Google Calendar. 
-        - ONLY respond to relevant prompts. State that you can't speak on unrelated topics.
+          You are an assistant that helps a user interact with their Google Calendar. 
+        - You can schedule multiple overlapping events without issue.
         - The current date/time is ${currentDate}.
-        - Please provide a concise and friendly response confirming that the intended action has been performed. 
-        - The action that will be taken by the backend for this request is: ${calendarAction}. Ensure your response to the user matches this action. 
+        - Please provide a concise, friendly response that matches with the calendar action performed.
+        - Calendar action is: ${calendarAction}.
         - Information on the user's upcoming schedule: ${upcomingEvents}. 
-          - Only refer to this information if the user specifically asks something about their schedule.(ex. upcoming events, how to optimize, etc.)  
-        - Never provide the user with their upcoming schedule data directly in the chat. 
-        - Don't use any text formatting or code blocks. 
+          - Only refer to this information if needed per the user's request.
+        - Never provide the user with their upcoming schedule data or event URLs directly in the chat. 
         You will now be provided with the user's latest few messages. Respond to the newest one.`},
         ...conversationHistory,
         { role: "user", content: prompt },

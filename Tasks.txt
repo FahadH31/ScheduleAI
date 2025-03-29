@@ -1,14 +1,16 @@
 To Do (Prep for Demo):
-- Allow the ai to execute its recommendations. Basically, run multiple commands at once.
-- Support for tasks.
-- Smooth sign-in/authentication process. Less clicks and reauthentication (and publish app).
-- Option for voice input.
+- Allow the AI to make and execute recommendations.
+    - Essentially, allow for the creation and updating of multiple events at a time.
+- Easy way to undo actions. 
 
 Future To Do:
+- Voice input option.
 - Refresh token to avoid failed calendar calls after logged in for extended period of time.
 - Mobile styling support.
 - Support for calendars other than primary.
-- Allow timezone selection.
+- Allow the user to select time-zone.
+- Support for tasks API.
+- Publish Google Project/App.
 - Deploy.
 
 Limitations:
