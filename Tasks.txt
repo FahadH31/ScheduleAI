@@ -1,13 +1,15 @@
-Current To Do:
+To Do (Prep for Demo):
+- Allow the ai to execute its recommendations. Basically, run multiple commands at once.
+- Support for tasks.
+- Smooth sign-in/authentication process. Less clicks and reauthentication (and publish app).
+- Option for voice input.
+
+Future To Do:
 - Refresh token to avoid failed calendar calls after logged in for extended period of time.
 - Mobile styling support.
-- Smooth sign-in/authentication process. Less clicks and reauthentication (and publish app).
-- Deploy.
-
-Future Potential:
-- Support for tasks.
 - Support for calendars other than primary.
-- Option for voice input.
+- Allow timezone selection.
+- Deploy.
 
 Limitations:
 - Can only create/update one event a time.

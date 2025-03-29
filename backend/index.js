@@ -50,7 +50,7 @@ const oAuth2Client = new OAuth2Client(
 );
 
 const app = express();
-const port = process.env.PORT || 8080;
+const port = process.env.PORT || 8070;
 app.use(cors());
 app.use(express.json());
 
@@ -121,7 +121,6 @@ async function getUpcomingEvents(accessToken) {
 
 // Function to create an event for the user's Google Calendar
 async function createEvent(accessToken, prompt, currentDate) {
-
   // Generate the structured event data from user input, via an OpenAI call. 
   const createEventCompletion = await openaiClient.chat.completions.create({
     model: "gpt-4o-mini",
@@ -131,10 +130,11 @@ async function createEvent(accessToken, prompt, currentDate) {
         content: `
         You are an assistant that creates events using Google Calendar. 
             - The current date/time is ${currentDate}. 
-            - When asked to create an event, you will ONLY respond in a structured format, exactly like the following example: ${createEventFormat}. 
+            - When asked to create an event, you will ONLY respond in a structured format, exactly like the following example: ${createEventFormat}.
             - The only mandatory fields are the start and end time (in ISO 8601 format), use 30 minutes as the default length.
-            - Fill the other fields as you deem suitable. Don't set notifications, email addresses, locations, or recurring events unless explicitly told to do so. 
-            Assume the timezone is EST. Ensure the dates exist in the calendar (e.g no February 29th in non-leap years).` },
+            - Fill the other fields as you deem suitable. Don't set notifications, email addresses or recurring events unless explicitly told to do so.
+            - Don't set a location unless you can determine an appropriate one from the user's input (no made-up locations).
+            Assume the timezone is GMT-4 (Eastern Daylight Saving Time). Ensure the dates exist in the calendar (e.g no February 29th in non-leap years).` },
       { role: "user", content: prompt },
     ],
   });
@@ -314,10 +314,14 @@ app.post("/api/openai", async (req, res) => {
       messages: [
         {
           role: "system",
-          content: `You are an AI assistant that helps schedule events using Google Calendar.
+          content: `
+          You are an AI assistant that helps schedule events using Google Calendar. 
+        - ONLY respond to relevant prompts. State that you can't speak on unrelated topics.
         - The current date/time is ${currentDate}.
-        - Please provide a concise and friendly response confirming that the intended action is now being performed. 
-        - Information on the user's upcoming schedule: ${upcomingEvents}. Only refer to this information if the user specifically asks something about their schedule.(ex. upcoming events, how to optimize, etc.)  
+        - Please provide a concise and friendly response confirming that the intended action has been performed. 
+        - The action that will be taken by the backend for this request is: ${calendarAction}. Ensure your response to the user matches this action. 
+        - Information on the user's upcoming schedule: ${upcomingEvents}. 
+          - Only refer to this information if the user specifically asks something about their schedule.(ex. upcoming events, how to optimize, etc.)  
         - Never provide the user with their upcoming schedule data directly in the chat. 
         - Don't use any text formatting or code blocks. 
         You will now be provided with the user's latest few messages. Respond to the newest one.`},
