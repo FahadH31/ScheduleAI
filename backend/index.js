@@ -50,6 +50,8 @@ const createEventFormat = `{
 }`
 
 const conversationHistory = [];
+const deletedEventsCache = [];
+const MAX_DELETED_CACHE = 10; // Number of recently deleted events to remember
 
 // Initialize OpenAI Client
 const openaiClient = new OpenAI({
@@ -72,16 +74,18 @@ app.use(express.json());
 const selectAction = async (prompt, upcomingEvents) => {
   const classifyAction = await openaiClient.chat.completions.create({
     model: "gpt-4o-mini",
+    temperature: 0.25,
     messages: [
       {
         role: "system",
         content: `
-        Classify the user's intent into one of the following categories: 
+        Classify the user's intent into one of the following categories (don't make up any other categories!): 
         - "CREATE_EVENT": If the user wants to create or schedule a single event (including cases where 1 event is recurring). Or, if they describe an upcoming event that doesn't already exist. 
         - "CREATE_MULTIPLE_EVENTS": If the user wants to create or schedule multiple events at once.
         - "DELETE_EVENT": If the user wants to delete any event(s).
         - "UPDATE_EVENT": If the user wants to update a single existing event.
         - "UPDATE_MULTIPLE_EVENTS": If the user wants to update multiple existing events at once.
+        - "UNDO_DELETE": If the user wants to undo or restore any recently deleted event(s). Ensure they are asking for an UNDO, not just a deletion.
         - "OTHER": For all other requests.
         ONLY return the classifier, nothing else, regardless of the user input. 
         Here is the user's schedule information as context to help you in the classification: ${upcomingEvents}. 
@@ -92,6 +96,7 @@ const selectAction = async (prompt, upcomingEvents) => {
       { role: "user", content: prompt },
     ]
   });
+
 
   const action = classifyAction.choices[0].message.content;
   console.log("Action Classification:", action);
@@ -143,6 +148,7 @@ async function createEvent(accessToken, prompt, currentDate) {
   // Generate the structured event data from user input, via an OpenAI call. 
   const createEventCompletion = await openaiClient.chat.completions.create({
     model: "gpt-4o-mini",
+    temperature: 0.25,
     messages: [
       {
         role: "system",
@@ -188,6 +194,7 @@ async function createEvent(accessToken, prompt, currentDate) {
 async function createMultipleEvents(accessToken, prompt, currentDate) {
   const createMultipleEventsCompletion = await openaiClient.chat.completions.create({
     model: "gpt-4o-mini",
+    temperature: 0.25,
     messages: [
       {
         role: "system",
@@ -199,9 +206,10 @@ async function createMultipleEvents(accessToken, prompt, currentDate) {
         ${createEventFormat}
         - Even if there's only one event to create, wrap it in an array like: [{ event details }]
         - The only mandatory fields for each event are the summary, start and end time (in ISO 8601 format).
-        - Fill the other fields as you deem suitable. Don't set notifications, email addresses, or recurring events unless explicitly told to do so.
-        - Don't set a location unless you can determine an appropriate one from the user's input (no made-up locations).
-        - Don't respond with any markdown, including for code blocks, bolding, italics, etc. No text formatting.
+        - Fill the other fields as you deem suitable. 
+        - DON'T set notifications, email addresses, or recurrence unless EXPLICITLY told to do so.
+        - DON'T set a location unless you can determine an appropriate one from the user's input (no made-up locations).
+        - DON'T respond with any markdown, including for code blocks, bolding, italics, etc. No text formatting.
         - Assume the timezone is GMT-4 (Eastern Daylight Saving Time). Ensure the dates exist in the calendar (e.g., no February 29th in non-leap years).`
       },
       { role: "user", content: prompt },
@@ -262,6 +270,7 @@ async function createMultipleEvents(accessToken, prompt, currentDate) {
 async function deleteEvents(accessToken, prompt, currentDate, upcomingEvents) {
   const deleteEventCompletion = await openaiClient.chat.completions.create({
     model: "gpt-3.5-turbo",
+    temperature: 0.25,
     messages: [
       {
         role: "system",
@@ -283,12 +292,33 @@ async function deleteEvents(accessToken, prompt, currentDate, upcomingEvents) {
   const calendar = google.calendar({ version: 'v3', auth });
 
   const results = [];
-  for (i = 0; i < eventIdArray.length; i++) {
+  
+  // First, get full event details before deleting
+  for (let i = 0; i < eventIdArray.length; i++) {
     try {
+      // Get the full event details before deletion
+      const event = await calendar.events.get({
+        calendarId: 'primary',
+        eventId: eventIdArray[i],
+      });
+      
+      // Delete the event
       await calendar.events.delete({
         calendarId: 'primary',
         eventId: eventIdArray[i],
       });
+
+      // Store the deleted event in our cache
+      deletedEventsCache.unshift({
+        eventId: eventIdArray[i],
+        fullEvent: event.data,
+        deletedAt: new Date().toISOString()
+      });
+      
+      // Keep cache size limited
+      if (deletedEventsCache.length > MAX_DELETED_CACHE) {
+        deletedEventsCache.pop();
+      }
 
       console.log(`Event with ID ${eventIdArray[i]} deleted successfully.`);
       results.push({
@@ -311,10 +341,106 @@ async function deleteEvents(accessToken, prompt, currentDate, upcomingEvents) {
   };
 }
 
+async function undoDelete(accessToken, prompt) {
+  // If there are no deleted events in the cache
+  if (deletedEventsCache.length === 0) {
+    return { 
+      success: false, 
+      error: "No recently deleted events to restore" 
+    };
+  }
+
+  const undoCompletion = await openaiClient.chat.completions.create({
+    model: "gpt-3.5-turbo",
+    temperature: 0.25,
+    messages: [
+      {
+        role: "system",
+        content: `You are an assistant that helps users restore recently deleted Google Calendar events.
+        The user wants to undo a deletion. Based on their prompt and the list of recently deleted events,
+        determine which events they want to restore. If they don't specify or just say "undo delete", 
+        assume they want to restore the most recently deleted event.
+        RESPOND ONLY with the indices (starting from 0) of the deletedEventsCache array to restore, 
+        comma-separated if multiple. For example: "0" or "0,2,3".
+        Here are the recently deleted events:
+        ${JSON.stringify(deletedEventsCache.map((item, index) => {
+          const event = item.fullEvent;
+          return {
+            index,
+            summary: event.summary,
+            start: event.start,
+            end: event.end,
+            deletedAt: item.deletedAt
+          };
+        }))}`
+      },
+      { role: "user", content: prompt },
+    ],
+  });
+
+  const indicesStr = undoCompletion.choices[0].message.content;
+  const indicesToRestore = indicesStr.split(',').map(idx => parseInt(idx.trim()));
+  
+  const auth = new google.auth.OAuth2();
+  auth.setCredentials({ access_token: accessToken });
+  const calendar = google.calendar({ version: 'v3', auth });
+
+  const results = [];
+  
+  for (const idx of indicesToRestore) {
+    if (idx < 0 || idx >= deletedEventsCache.length) continue;
+    
+    const deletedEvent = deletedEventsCache[idx];
+    
+    try {
+      // Create a clean version of the event for reinsertion
+      // This removes fields that might cause conflicts
+      const eventToRestore = { ...deletedEvent.fullEvent };
+      delete eventToRestore.id; // Remove ID to prevent conflicts
+      delete eventToRestore.etag;
+      delete eventToRestore.htmlLink;
+      delete eventToRestore.iCalUID;
+      delete eventToRestore.sequence;
+      delete eventToRestore.created;
+      delete eventToRestore.updated;
+      
+      // Insert the event as a new event
+      const response = await calendar.events.insert({
+        calendarId: 'primary',
+        resource: eventToRestore,
+      });
+      
+      // Remove the restored event from our cache
+      deletedEventsCache.splice(idx, 1);
+      
+      results.push({
+        summary: eventToRestore.summary || "Unknown event",
+        success: true,
+        newEventId: response.data.id
+      });
+      
+      console.log(`Event "${eventToRestore.summary}" restored successfully with new ID: ${response.data.id}`);
+    } catch (error) {
+      console.error(`Error restoring event:`, error);
+      results.push({
+        summary: deletedEvent.fullEvent.summary || "Unknown event",
+        success: false,
+        error: error.message
+      });
+    }
+  }
+  
+  return {
+    success: results.length > 0 && results.every(r => r.success),
+    results: results
+  };
+}
+
 // Function to update an event on the user's Google Calendar
 async function updateEvent(accessToken, prompt, currentDate, upcomingEvents) {
   const updateEventCompletion = await openaiClient.chat.completions.create({
     model: "gpt-4o-mini",
+    temperature: 0.25,
     messages: [
       {
         role: "system",
@@ -329,8 +455,9 @@ async function updateEvent(accessToken, prompt, currentDate, upcomingEvents) {
                       ${createEventFormat}
                     }
                   }
-            Fill the details as you deem appropriate based on the user input. If a field is unchanged, provide the original value.
-            Don't change the location, time, recurrence, or color unless explicitly told to do so.
+            Update the details as you deem appropriate based on the user input. 
+            If a field is unchanged, provide the original value.
+            DON'T update the location, time, recurrence, or color unless EXPLICITLY told to do so.
             Ensure the dates exist in the calendar (e.g no February 29th in non-leap years).
             Following are the user's upcoming events with their IDs: ${upcomingEvents}`
       },
@@ -365,6 +492,7 @@ async function updateEvent(accessToken, prompt, currentDate, upcomingEvents) {
 async function updateMultipleEvents(accessToken, prompt, currentDate, upcomingEvents) {
   const updateMultipleEventsCompletion = await openaiClient.chat.completions.create({
     model: "gpt-4o-mini",
+    temperature: 0.25,
     messages: [
       {
         role: "system",
@@ -526,6 +654,9 @@ app.post("/api/openai", async (req, res) => {
     else if (calendarAction === "UPDATE_MULTIPLE_EVENTS") {
       actionResult = await updateMultipleEvents(access_token, prompt, currentDate, upcomingEvents);
     }
+    else if (calendarAction === "UNDO_DELETE") {
+      actionResult = await undoDelete(access_token, prompt);
+    }
 
     // OpenAI call to provide the user a response in the chat.
     const userResponseCompletion = await openaiClient.chat.completions.create({
@@ -537,7 +668,7 @@ app.post("/api/openai", async (req, res) => {
           You are an assistant that helps a user interact with their Google Calendar. 
         - You can schedule multiple overlapping events without issue.
         - The current date/time is ${currentDate}.
-        - Please provide a concise, friendly response that matches with the calendar action performed.
+        - Please provide a concise, friendly response that matches with the calendar action performed. (Don't ask for another prompt from the user if the action has been performed successfully)
         - Calendar action is: ${calendarAction}.
         - Action result: ${JSON.stringify(actionResult || {})}
         - Information on the user's upcoming schedule: ${upcomingEvents}. 
@@ -548,6 +679,8 @@ app.post("/api/openai", async (req, res) => {
         { role: "user", content: prompt },
       ],
       stream: true,
+      max_completion_tokens: 500,
+      temperature: 0.5
     });
 
     res.setHeader("Content-Type", "text/event-stream");

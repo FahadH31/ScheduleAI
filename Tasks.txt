@@ -1,21 +1,25 @@
 To Do (Prep for Demo):
-- Allow the AI to make and execute recommendations.
-    - Essentially, allow for the creation and updating of multiple events at a time.
-- Easy way to undo actions. 
+
 
 Future To Do:
 - Voice input option.
-- Refresh token to avoid failed calendar calls after logged in for extended period of time.
 - Mobile styling support.
+
+- Conditionally reload - not on "OTHER"
+- Refresh token to avoid failed calendar calls after logged in for extended period of time.
+
 - Support for calendars other than primary.
 - Allow the user to select time-zone.
 - Support for tasks API.
+
 - Publish Google Project/App.
 - Deploy.
 
+
 Limitations:
-- Can only create/update one event a time.
 - There is a limit on the number of events the AI has access to at any given time (20).
 - Only deletes/updates future events.
+- The actual "CREATE/UPDATE/DELETE" functions do not see the AI's In-Chat Response. So the user must specify what they want
+to schedule. 
 
 
