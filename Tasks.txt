@@ -1,9 +1,5 @@
-To Do (Prep for Demo):
-
-
 Future To Do:
 - Voice input option.
-- Mobile styling support.
 
 - Conditionally reload - not on "OTHER"
 - Refresh token to avoid failed calendar calls after logged in for extended period of time.
@@ -19,7 +15,7 @@ Future To Do:
 Limitations:
 - There is a limit on the number of events the AI has access to at any given time (20).
 - Only deletes/updates future events.
-- The actual "CREATE/UPDATE/DELETE" functions do not see the AI's In-Chat Response. So the user must specify what they want
-to schedule. 
-
+- The actual "CREATE/UPDATE/DELETE" functions do not see the AI's In-Chat Response. 
+So the user must specify what they want to schedule. 
+- mistakes are made in understanding the user input and accurately representing it in the actual event
 

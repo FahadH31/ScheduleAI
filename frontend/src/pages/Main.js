@@ -4,7 +4,7 @@ import Chat from "../components/Chat";
 
 function Main() {
   return (
-    <div className="flex w-full h-screen bg-gray-900 text-white">
+    <div className="flex w-full h-screen bg-gray-900 text-white flex-col sm:flex-row">
       <GoogleCalendarIFrame />
       <Chat />
     </div>

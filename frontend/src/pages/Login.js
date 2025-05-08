@@ -9,9 +9,9 @@ function Login() {
 
     return (
         <GoogleOAuthProvider clientId={GoogleClientID}>
-            <div class='flex h-[100vh] max-sm:flex-col max-sm:text-center'>
+            <div class='flex h-[100vh] flex-col sm:flex-row text-center'>
                 <div id='left-side' class='flex flex-col text-center w-[50vw] bg-white justify-items-center max-sm:w-[100vw] 
-            max-sm:mb-10 max-sm:p-2 max-sm:h-[50vh]'>
+            max-sm:mb-10 max-sm:p-2 max-sm:h-[50vh] max-sm:p-5'>
                     <p class='mt-32 text-4xl font-bold max-sm:text-3xl max-sm:mt-12'>Connect your Calendar</p>
                     <p class='mt-3 text-xl font-light max-sm:text-lg'>Get started by signing in with your Google account!</p>
                     <GoogleLoginButton />

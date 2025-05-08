@@ -65,9 +65,9 @@ const Chat = () => {
     };
 
     return (
-        <div className="flex flex-col w-1/2 p-6">
+        <div className="flex flex-col p-3 sm:w-1/2 sm:p-6">
             <div className="flex items-center">
-                <h1 className="text-2xl font-semibold text-center flex-grow">Google Calendar AI Assistant</h1>
+                <h1 className="hidden sm:flow-root sm:text-2xl font-semibold text-center flex-grow">Google Calendar AI Assistant</h1>
             </div>
             {/* Clear Chat Button */}
             <button
@@ -91,7 +91,7 @@ const Chat = () => {
                     />
                 </svg>
             </button>
-            <div className="mb-4 flex-grow bg-gray-800 p-5 rounded-lg shadow-lg border border-gray-700 overflow-y-auto custom-scrollbar relative">
+            <div className="h-64 sm:h-auto mb-4 flex-grow bg-gray-800 p-5 rounded-lg shadow-lg border border-gray-700 overflow-y-auto custom-scrollbar relative">
                 <div className="space-y-3">
                     <div className="self-start max-w-md bg-gray-700 p-3 rounded-lg shadow-md">
                         <p className="text-sm font-semibold text-green-400">Calendar Assistant</p>
