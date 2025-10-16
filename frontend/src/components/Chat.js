@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { getOpenAIResponse } from "./OpenAICall";
-import ClearChatIcon from "../assets/icons/trash.svg"
 import MicIcon from "../assets/icons/mic.svg"
 import SendIcon from "../assets/icons/send.svg"
 import StopIcon from "../assets/icons/stop-square.png"
+import LogoutIcon from "../assets/icons/log-out.svg"
 import ReactMarkdown from "react-markdown";
 import useSpeechToText from "../hooks/useSpeechToText";
 
@@ -33,7 +33,7 @@ const Chat = () => {
 
         const message = inputText;
         setInputText("");
-        
+
         setLoading(true);
 
         const newResponse = { user: message, ai: "" };
@@ -75,6 +75,13 @@ const Chat = () => {
         sessionStorage.removeItem("chatHistory"); // Clear chat history from session storage
     };
 
+    const handleLogout = () => {
+        sessionStorage.setItem("isAuthenticated", "false");
+        sessionStorage.removeItem("accessToken");
+        sessionStorage.removeItem("email");
+        window.location.reload();
+    }
+
     const toggleListening = () => {
         if (isListening) {
             stopVoiceInput();
@@ -92,17 +99,25 @@ const Chat = () => {
 
     return (
         <div className="flex flex-col p-3 sm:w-1/2 sm:p-6">
-            <div className="flex items-center">
-                <h1 className="hidden sm:flow-root sm:text-2xl font-semibold text-center flex-grow">Google Calendar AI Assistant</h1>
+            {/* Logout Button */}
+            <button
+                type="button"
+                onClick={handleLogout}
+                className="fixed right-4 top-4 transition-all hover:opacity-50"
+            >
+                <img src={LogoutIcon} alt="Logout Icon" className="size-5" title="Log-out"></img>
+            </button>
+            <div className="flex items-center mt-8">
+                <h1 className="hidden sm:flow-root sm:text-3xl font-semibold text-center flex-grow">Google Calendar AI Assistant</h1>
             </div>
             {/* Clear Chat Button */}
             <button
                 type="button"
                 onClick={handleClearChat}
-                className="mr-0 ml-auto text-gray-400 hover:text-red-500 transition-all mb-2"
-                title="Clear Chat History"
+                className="ml-0 mr-auto text-gray-400 text-xs hover:opacity-50 transition-all mb-1 mt-4"
+                title="Clear chat"
             >
-                <img src={ClearChatIcon} alt="Clear Chat Icon" className="size-5"></img>
+                Clear Chat
             </button>
             <div className="h-64 sm:h-auto mb-4 flex-grow bg-gray-800 p-5 rounded-lg shadow-lg border border-gray-700 overflow-y-auto custom-scrollbar relative">
                 <div className="space-y-3">
@@ -138,11 +153,11 @@ const Chat = () => {
                 </div>
                 <div ref={messagesEndRef} /> {/* An invisible div to set viewpoint at the bottom of the chat when new messages come in */}
             </div>
-            <form onSubmit={handleSubmit} className="flex">
+            <form onSubmit={handleSubmit} className="flex mt-3 mb-5">
                 <textarea
                     className="w-[90%] p-3 rounded-lg bg-gray-700 text-white text-md resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="Type your message here..."
-                    value={isListening ? inputText + (transcript.length ? (inputText.length ? ' ' : '') + transcript : '') : inputText }
+                    value={isListening ? inputText + (transcript.length ? (inputText.length ? ' ' : '') + transcript : '') : inputText}
                     onChange={handleInputChange}
                     onKeyPress={handleKeyPress}
                     rows={3}
@@ -150,12 +165,12 @@ const Chat = () => {
                 {/*Voice Input & Send Buttons*/}
                 <div className="flex-col space-y-2 ml-3 w-[10%]">
                     <button
-                        type = "button"
+                        type="button"
                         className={`size-11 rounded-full ${isListening ? "bg-red-600 hover:bg-red-500" : "bg-white hover:bg-gray-400"} text-white font-semibold text-md transition-all disabled:opacity-50`}
                         disabled={loading}
-                        onClick={() =>{toggleListening();}}
+                        onClick={() => { toggleListening(); }}
                     >
-                        <img src={isListening ? StopIcon : MicIcon } className={`ml-auto mr-auto ${isListening ? "size-3" : "size-5" }`}></img>
+                        <img src={isListening ? StopIcon : MicIcon} className={`ml-auto mr-auto ${isListening ? "size-3" : "size-5"}`} alt="voice-input-button-icons"></img>
                     </button>
                     <button
                         type="submit"
