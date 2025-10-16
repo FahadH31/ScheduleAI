@@ -106,6 +106,7 @@ router.post("/api/openai", async (req, res) => {
       temperature: 0.5
     });
 
+    res.setHeader("Calendar-Action", calendarAction); // send calendar action as http header
     res.setHeader("Content-Type", "text/event-stream");
     res.setHeader("Cache-Control", "no-cache");
     res.setHeader("Connection", "keep-alive");

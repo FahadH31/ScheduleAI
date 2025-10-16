@@ -19,6 +19,8 @@ export const getOpenAIResponse = async (prompt, onStreamData) => {
       body: JSON.stringify({ prompt }),
     });
 
+    const action = response.headers.get("Calendar-Action");
+
     if (!response.body) throw new Error("No response body");
 
     const reader = response.body.getReader();
@@ -39,7 +41,11 @@ export const getOpenAIResponse = async (prompt, onStreamData) => {
       onStreamData(chunk);
     }
 
-    window.location.reload(); // Reload the page to update the iframe
+    // Trigger iframe reload (only if calendar action is taken)
+    if(action !== "OTHER"){
+      window.postMessage('reload', window.location.origin)
+    }
+
     return fullResponse;
   } catch (error) {
     console.error("Error calling OpenAI API:", error.response?.data || error.message);

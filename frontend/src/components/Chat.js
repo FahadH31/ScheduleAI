@@ -153,7 +153,7 @@ const Chat = () => {
                 </div>
                 <div ref={messagesEndRef} /> {/* An invisible div to set viewpoint at the bottom of the chat when new messages come in */}
             </div>
-            <form onSubmit={handleSubmit} className="flex mt-3 mb-5">
+            <form onSubmit={handleSubmit} className="flex mt-1 mb-5">
                 <textarea
                     className="w-[90%] p-3 rounded-lg bg-gray-700 text-white text-md resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="Type your message here..."

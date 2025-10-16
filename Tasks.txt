@@ -1,6 +1,4 @@
 Future To Do:
-- Conditionally reload - not on "OTHER"
-- Logout option
 - on clear chat, clear the actual chat that OpenAI has too.
 - Refresh token to avoid failed calendar calls after logged in for extended period of time.
 - Support for calendars other than primary.

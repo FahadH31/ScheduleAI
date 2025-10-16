@@ -5,7 +5,8 @@ const apiRoutes = require('./src/api_routes');
 const app = express();
 const port = process.env.PORT || 8070;
 
-app.use(cors());
+app.use(cors({
+  exposedHeaders: ['Calendar-Action']}));
 app.use(express.json());
 app.use('/', apiRoutes);
 

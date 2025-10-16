@@ -2,6 +2,21 @@ function GoogleCalendarIFrame() {
 
     const email_address = sessionStorage.getItem("email");
 
+
+    // Listener to reload iframe 
+    window.addEventListener("message",
+        function(e) {
+            if(e.origin !== window.location.origin){
+                return;
+            }
+
+            if(e.data === "reload"){
+                document.getElementById("calendarIFrame").src += '';            
+            }
+        }
+
+    )
+
     return (
         <iframe 
             title= "Calendar"
