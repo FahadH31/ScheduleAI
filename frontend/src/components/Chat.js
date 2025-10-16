@@ -31,13 +31,16 @@ const Chat = () => {
         e.preventDefault();
         if (!inputText.trim()) return;
 
+        const message = inputText;
+        setInputText("");
+        
         setLoading(true);
 
-        const newResponse = { user: inputText, ai: "" };
+        const newResponse = { user: message, ai: "" };
         setResponses((prev) => [...prev, newResponse]);
 
         try {
-            await getOpenAIResponse(inputText, (chunk) => {
+            await getOpenAIResponse(message, (chunk) => {
                 setResponses((prev) => {
                     const updatedResponses = [...prev];
                     updatedResponses[updatedResponses.length - 1] = {
@@ -53,7 +56,7 @@ const Chat = () => {
             console.error("Error fetching OpenAI response:", error);
             setResponses((prev) => [
                 ...prev.slice(0, -1),
-                { user: inputText, ai: "Failed to fetch response. Please try again." },
+                { user: message, ai: "Failed to fetch response. Please try again." },
             ]);
         } finally {
             setLoading(false);
