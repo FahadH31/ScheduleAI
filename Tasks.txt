@@ -1,12 +1,12 @@
 Future To Do:
-- Voice input option.
-
 - Conditionally reload - not on "OTHER"
+- Logout option
+- on clear chat, clear the actual chat that OpenAI has too.
 - Refresh token to avoid failed calendar calls after logged in for extended period of time.
-
 - Support for calendars other than primary.
-- Allow the user to select time-zone.
+- Retrieve and automatically use the user's timezone (hardcoded to EST right now).
 - Support for tasks API.
+- try gpt 4.1 or wtv was being recommended in that one linkedin post
 
 - Publish Google Project/App.
 - Deploy.

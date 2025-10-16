@@ -1,6 +1,11 @@
 import React, { useState, useEffect, useRef } from "react";
 import { getOpenAIResponse } from "./OpenAICall";
+import ClearChatIcon from "../assets/icons/trash.svg"
+import MicIcon from "../assets/icons/mic.svg"
+import SendIcon from "../assets/icons/send.svg"
+import StopIcon from "../assets/icons/stop-square.png"
 import ReactMarkdown from "react-markdown";
+import useSpeechToText from "../hooks/useSpeechToText";
 
 const Chat = () => {
     const [inputText, setInputText] = useState("");
@@ -10,6 +15,8 @@ const Chat = () => {
     });
     const [loading, setLoading] = useState(false);
     const messagesEndRef = useRef(null);
+    const { isListening, transcript, startListening, stopListening } = useSpeechToText({ continuous: true });
+
 
     // Save to session storage & keep chat scrolled at bottom whenever responses change
     useEffect(() => {
@@ -19,6 +26,7 @@ const Chat = () => {
 
     const handleInputChange = (e) => setInputText(e.target.value);
 
+    // Upon submit call OpenAI response with the entered user message
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!inputText.trim()) return;
@@ -64,6 +72,21 @@ const Chat = () => {
         sessionStorage.removeItem("chatHistory"); // Clear chat history from session storage
     };
 
+    const toggleListening = () => {
+        if (isListening) {
+            stopVoiceInput();
+        } else {
+            startListening();
+        }
+    };
+
+    // Ensure stoppage of voice input is handled completely 
+    const stopVoiceInput = () => {
+        const finalText = inputText + (transcript.length ? (inputText.length ? ' ' : '') + transcript : '');
+        setInputText(finalText); // Update input text with the final transcript
+        stopListening();
+    };
+
     return (
         <div className="flex flex-col p-3 sm:w-1/2 sm:p-6">
             <div className="flex items-center">
@@ -74,22 +97,9 @@ const Chat = () => {
                 type="button"
                 onClick={handleClearChat}
                 className="mr-0 ml-auto text-gray-400 hover:text-red-500 transition-all mb-2"
-                title="Clear Chat"
+                title="Clear Chat History"
             >
-                <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-5 w-5"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                >
-                    <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                    />
-                </svg>
+                <img src={ClearChatIcon} alt="Clear Chat Icon" className="size-5"></img>
             </button>
             <div className="h-64 sm:h-auto mb-4 flex-grow bg-gray-800 p-5 rounded-lg shadow-lg border border-gray-700 overflow-y-auto custom-scrollbar relative">
                 <div className="space-y-3">
@@ -125,22 +135,31 @@ const Chat = () => {
                 </div>
                 <div ref={messagesEndRef} /> {/* An invisible div to set viewpoint at the bottom of the chat when new messages come in */}
             </div>
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="flex">
                 <textarea
-                    className="w-full p-3 rounded-lg bg-gray-700 text-white text-md resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-[90%] p-3 rounded-lg bg-gray-700 text-white text-md resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="Type your message here..."
-                    value={inputText}
+                    value={isListening ? inputText + (transcript.length ? (inputText.length ? ' ' : '') + transcript : '') : inputText }
                     onChange={handleInputChange}
                     onKeyPress={handleKeyPress}
                     rows={3}
                 ></textarea>
-                <div className="flex space-x-4">
+                {/*Voice Input & Send Buttons*/}
+                <div className="flex-col space-y-2 ml-3 w-[10%]">
+                    <button
+                        type = "button"
+                        className={`size-11 rounded-full ${isListening ? "bg-red-600 hover:bg-red-500" : "bg-white hover:bg-gray-400"} text-white font-semibold text-md transition-all disabled:opacity-50`}
+                        disabled={loading}
+                        onClick={() =>{toggleListening();}}
+                    >
+                        <img src={isListening ? StopIcon : MicIcon } className={`ml-auto mr-auto ${isListening ? "size-3" : "size-5" }`}></img>
+                    </button>
                     <button
                         type="submit"
-                        className="w-full py-3 rounded-lg bg-blue-500 hover:bg-blue-600 text-white font-semibold text-md transition-all disabled:opacity-50"
+                        className="size-11 rounded-full bg-blue-600 hover:bg-blue-700 text-white font-semibold text-md transition-all disabled:opacity-50"
                         disabled={loading}
                     >
-                        {loading ? "Sending..." : "Send"}
+                        <img src={SendIcon} alt="Send Icon" className="ml-auto mr-auto size-5 opacity-[85%] invert"></img>
                     </button>
                 </div>
             </form>
