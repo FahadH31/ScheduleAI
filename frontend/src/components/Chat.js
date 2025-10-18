@@ -75,12 +75,22 @@ const Chat = () => {
         sessionStorage.removeItem("chatHistory"); // Clear chat history from session storage
     };
 
-    const handleLogout = () => {
-        sessionStorage.setItem("isAuthenticated", "false");
-        sessionStorage.removeItem("accessToken");
-        sessionStorage.removeItem("email");
-        window.location.reload();
+    const handleLogout = async () => {
+    try {
+        await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/logout`, {
+            method: 'POST',
+            credentials: 'include'
+        });
+        
+        // Clear any remaining sessionStorage
+        sessionStorage.clear();
+        
+        // Redirect
+        window.location.href = '/';
+    } catch (error) {
+        console.error("Logout error:", error);
     }
+}
 
     const toggleListening = () => {
         if (isListening) {

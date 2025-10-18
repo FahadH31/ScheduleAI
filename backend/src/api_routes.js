@@ -1,25 +1,57 @@
 const express = require('express');
+const axios = require('axios');
 const date = require('date-and-time');
 const { oAuth2Client } = require('./authentication');
 const { openaiClient } = require('./authentication');
 const { getUpcomingEvents, conversationHistory } = require('./functions/calendar_functions');
-const { 
-  selectAction, 
-  createEvent, 
-  createMultipleEvents, 
-  deleteEvents, 
-  updateEvent, 
-  updateMultipleEvents, 
-  undoDelete 
+const {
+  selectAction,
+  createEvent,
+  createMultipleEvents,
+  deleteEvents,
+  updateEvent,
+  updateMultipleEvents,
+  undoDelete
 } = require('./functions/openai_functions');
 
 const router = express.Router();
 
+// Authentication Check Route
+router.get("/api/check-auth", (req, res) => {
+  if (req.session && req.session.tokens) {
+    res.status(200).json({ authenticated: true });
+  } else {
+    res.status(401).json({ authenticated: false });
+  }
+});
+
+
+// Logout Route
+router.post("/api/logout", (req, res) => {
+  req.session.destroy();
+  res.clearCookie('connect.sid');
+  res.json({ success: true });
+});
+
+
 // Google Authentication Route
 router.post("/api/google-auth", async (req, res) => {
-  const { tokens } = await oAuth2Client.getToken(req.body.tokenResponse); // Exchange code for tokens  
+  const { tokens } = await oAuth2Client.getToken(req.body.tokenResponse); // Exchange auth code for tokens  
   oAuth2Client.setCredentials(tokens);
-  res.json(tokens);
+  req.session.tokens = tokens; // stores token object in server-side session
+
+  // get user email
+  const userInfoResponse = await axios.get(
+    'https://www.googleapis.com/oauth2/v3/userinfo',
+    {
+      headers: {
+        Authorization: `Bearer ${tokens.access_token}`
+      }
+    }
+  );
+  const email = userInfoResponse.data.email;
+
+  res.status(200).json({ success: true, email: email });
 });
 
 // OpenAI Chat Route
@@ -43,12 +75,10 @@ router.post("/api/openai", async (req, res) => {
   var currentDate = new Date();
   currentDate = date.format(currentDate, 'hh:mm A ddd, MMM DD YYYY');
 
-  // Access token from frontend for interaction w/ Google Calendar
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return res.status(401).json({ error: "Unauthorized: No token provided" });
+  if (!req.session.tokens) {
+    return res.status(401).json({ error: "Not authenticated" });
   }
-  const access_token = authHeader.split(" ")[1];
+  const access_token = req.session.tokens.access_token;
 
   // Store upcoming events to provide in OpenAI call.
   var upcomingEvents = await getUpcomingEvents(access_token);

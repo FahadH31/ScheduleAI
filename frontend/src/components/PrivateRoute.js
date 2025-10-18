@@ -1,9 +1,36 @@
+import { useState, useEffect } from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
 
 const PrivateRoute = () => {
-    const isAuthenticated = sessionStorage.getItem("isAuthenticated") === "true";
+    const [isAuthenticated, setIsAuthenticated] = useState(null);
 
-    return isAuthenticated ? <Outlet /> : <Navigate to = "/" />
+    useEffect(() => {
+        const checkAuth = async () => {
+            try {
+                const res = await fetch(
+                    `${process.env.REACT_APP_BACKEND_URL}/api/check-auth`,
+                    { credentials: 'include' }
+                );
+
+                if (res.ok) {
+                    setIsAuthenticated(true);
+                } else {
+                    setIsAuthenticated(false);
+                }
+            } catch (error) {
+                console.error("Auth check failed:", error);
+                setIsAuthenticated(false);
+            }
+        };
+
+        checkAuth();
+    }, []);
+
+    if (isAuthenticated === null) {
+        return <div>Loading...</div>;
+    }
+
+    return isAuthenticated ? <Outlet /> : <Navigate to="/" />;
 }
 
 export default PrivateRoute;

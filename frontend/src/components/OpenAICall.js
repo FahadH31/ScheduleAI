@@ -2,20 +2,14 @@ const BACKEND_URL = `${process.env.REACT_APP_BACKEND_URL}/api/openai`;
 
 export const getOpenAIResponse = async (prompt, onStreamData) => {
   try {
-    const accessToken = sessionStorage.getItem("accessToken");
-
-    if (!accessToken) {
-      throw new Error("No access token found. Please log in.");
-    }
-
     console.log("Sending prompt to backend:", prompt);
 
     const response = await fetch(BACKEND_URL, {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json"
       },
+      credentials: 'include',
       body: JSON.stringify({ prompt }),
     });
 

@@ -9,25 +9,16 @@ const GoogleLoginButton = () => {
   const login = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
 
-      const tokens = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/api/google-auth`, {
-        tokenResponse,
-      });
-      console.log("Login Successful: ", tokens);
+      const tokens = await axios.post(`
+        ${process.env.REACT_APP_BACKEND_URL}/api/google-auth`, 
+        {tokenResponse},
+        {withCredentials: true}
+      );
+      console.log("Login Successful");
 
-      const accessToken = tokens.data.access_token;
-
-      // Fetch user email address from Google's API
-      const userInfo = await axios.get('https://www.googleapis.com/oauth2/v3/userinfo', {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
-      const email = userInfo.data.email;
-
-      // Session-based user data
-      sessionStorage.setItem("isAuthenticated", "true");
-      sessionStorage.setItem("accessToken", accessToken); 
-      sessionStorage.setItem("email", email); // Store the email address
+      // get email from backend
+      const email = tokens.data.email;
+      sessionStorage.setItem("email", email); // Store the email address (used for getting iframe)
 
       navigate('/dashboard');
     },
