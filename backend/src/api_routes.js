@@ -54,6 +54,7 @@ router.post("/api/google-auth", async (req, res) => {
   res.status(200).json({ success: true, email: email });
 });
 
+
 // OpenAI Chat Route
 router.post("/api/openai", async (req, res) => {
   // User prompt
@@ -75,6 +76,9 @@ router.post("/api/openai", async (req, res) => {
   var currentDate = new Date();
   currentDate = date.format(currentDate, 'hh:mm A ddd, MMM DD YYYY');
 
+  // Get the user timezone.
+  var timeZone = req.header("User-TimeZone");
+
   if (!req.session.tokens) {
     return res.status(401).json({ error: "Not authenticated" });
   }
@@ -93,19 +97,19 @@ router.post("/api/openai", async (req, res) => {
   try {
     // Perform the requested calendar action
     if (calendarAction === "CREATE_EVENT") {
-      actionResult = await createEvent(access_token, prompt, currentDate);
+      actionResult = await createEvent(access_token, prompt, currentDate, timeZone);
     }
     else if (calendarAction === "CREATE_MULTIPLE_EVENTS") {
-      actionResult = await createMultipleEvents(access_token, prompt, currentDate);
+      actionResult = await createMultipleEvents(access_token, prompt, currentDate, timeZone);
     }
     else if (calendarAction === "DELETE_EVENT") {
-      actionResult = await deleteEvents(access_token, prompt, currentDate, upcomingEvents);
+      actionResult = await deleteEvents(access_token, prompt, currentDate, timeZone, upcomingEvents);
     }
     else if (calendarAction === "UPDATE_EVENT") {
-      actionResult = await updateEvent(access_token, prompt, currentDate, upcomingEvents);
+      actionResult = await updateEvent(access_token, prompt, currentDate,  timeZone, upcomingEvents);
     }
     else if (calendarAction === "UPDATE_MULTIPLE_EVENTS") {
-      actionResult = await updateMultipleEvents(access_token, prompt, currentDate, upcomingEvents);
+      actionResult = await updateMultipleEvents(access_token, prompt, currentDate, timeZone, upcomingEvents);
     }
     else if (calendarAction === "UNDO_DELETE") {
       actionResult = await undoDelete(access_token, prompt);

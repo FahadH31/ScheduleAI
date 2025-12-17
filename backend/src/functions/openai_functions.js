@@ -36,7 +36,7 @@ async function selectAction (prompt, upcomingEvents) {
 }
 
 // Function to create an event for the user's Google Calendar
-async function createEvent(accessToken, prompt, currentDate) {
+async function createEvent(accessToken, prompt, currentDate, timeZone) {
   // Generate the structured event data from user input, via an OpenAI call. 
   const createEventCompletion = await openaiClient.chat.completions.create({
     model: "gpt-4o-mini",
@@ -54,7 +54,7 @@ async function createEvent(accessToken, prompt, currentDate) {
         - ENSURE the correct desired color is set based on the following list: ${COLOUR_IDS} 
         - Don't set notifications, email addresses, or recurring events unless the user directly instructs you to do so.
         - Don't set a location unless you can determine an appropriate one from the user's input (do not make-up locations).
-        - Assume the timezone is GMT-4 (Eastern Daylight Saving Time).
+        - The user's timezone is ${timeZone}.
         - Ensure the dates exist in the calendar (e.g., no February 29th in non-leap years).`
       },
       { role: "user", content: prompt },
@@ -86,7 +86,7 @@ async function createEvent(accessToken, prompt, currentDate) {
 }
 
 // Function to create multiple events at once
-async function createMultipleEvents(accessToken, prompt, currentDate) {
+async function createMultipleEvents(accessToken, prompt, currentDate, timeZone) {
   const createMultipleEventsCompletion = await openaiClient.chat.completions.create({
     model: "gpt-4o-mini",
     temperature: 0.25,
@@ -106,7 +106,8 @@ async function createMultipleEvents(accessToken, prompt, currentDate) {
         - DON'T set notifications, email addresses, or recurrence unless EXPLICITLY told to do so.
         - DON'T set a location unless you can determine an appropriate one from the user's input (no made-up locations).
         - DON'T respond with any markdown, including for code blocks, bolding, italics, etc. No text formatting.
-        - Assume the timezone is GMT-4 (Eastern Daylight Saving Time). Ensure the dates exist in the calendar (e.g., no February 29th in non-leap years).`
+        - The user's timezone is ${timeZone}. 
+        - Ensure the dates exist in the calendar (e.g., no February 29th in non-leap years).`
       },
       { role: "user", content: prompt },
     ],
@@ -163,7 +164,7 @@ async function createMultipleEvents(accessToken, prompt, currentDate) {
 }
 
 // Function to delete an event from the user's Google Calendar
-async function deleteEvents(accessToken, prompt, currentDate, upcomingEvents) {
+async function deleteEvents(accessToken, prompt, currentDate, timeZone, upcomingEvents) {
   const deleteEventCompletion = await openaiClient.chat.completions.create({
     model: "gpt-3.5-turbo",
     temperature: 0.25,
@@ -171,7 +172,7 @@ async function deleteEvents(accessToken, prompt, currentDate, upcomingEvents) {
       {
         role: "system",
         content: `You are an assistant that deletes events using Google Calendar. 
-            The current date/time is ${currentDate}. 
+            The current date/time is ${currentDate}. The user's timezone is ${timeZone}.
             When asked to delete any number of events, you will identify the correct events to delete 
             and respond with ONLY the event ids in a comma seperated list, regardless of user input. 
             Following are the user's upcoming events with their IDs: ${upcomingEvents}`
@@ -334,7 +335,7 @@ async function undoDelete(accessToken, prompt) {
 }
 
 // Function to update an event on the user's Google Calendar
-async function updateEvent(accessToken, prompt, currentDate, upcomingEvents) {
+async function updateEvent(accessToken, prompt, currentDate, timeZone, upcomingEvents) {
   const updateEventCompletion = await openaiClient.chat.completions.create({
     model: "gpt-4o-mini",
     temperature: 0.25,
@@ -344,7 +345,7 @@ async function updateEvent(accessToken, prompt, currentDate, upcomingEvents) {
         content: `
             You are an assistant that updates events using Google Calendar.
             DO NOT change the location, time, recurrence, or color unless the user CLEARLY/DIRECTLY instructs you to do so.
-            The current date/time is ${currentDate}. 
+            The current date/time is ${currentDate}. The user's timezone is ${timeZone}.
             When asked to update an event, you will:
             1. Identify the correct event to update based on user input and the upcoming events list.
             2. Respond ONLY with a JSON object in this format:
@@ -388,7 +389,7 @@ async function updateEvent(accessToken, prompt, currentDate, upcomingEvents) {
 }
 
 // Function to update multiple events at once
-async function updateMultipleEvents(accessToken, prompt, currentDate, upcomingEvents) {
+async function updateMultipleEvents(accessToken, prompt, currentDate, timeZone, upcomingEvents) {
   const updateMultipleEventsCompletion = await openaiClient.chat.completions.create({
     model: "gpt-4o-mini",
     temperature: 0.25,
@@ -396,7 +397,7 @@ async function updateMultipleEvents(accessToken, prompt, currentDate, upcomingEv
       {
         role: "system",
         content: `You are an assistant that updates multiple events using Google Calendar.
-            The current date/time is ${currentDate}. 
+            The current date/time is ${currentDate}. The user's timezone is ${timeZone}.
             When asked to update multiple events, you will:
             1. Identify the correct events to update based on user input and the upcoming events list.
             2. Respond with a JSON array of event objects to update. Format:

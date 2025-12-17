@@ -1,11 +1,9 @@
 Future To Do:
-- on clear chat, clear the actual chat that OpenAI has too.
 - Refresh token to avoid failed calendar calls after logged in for extended period of time.
-- Support for calendars other than primary.
-- Retrieve and automatically use the user's timezone (hardcoded to EST right now).
+- On clear chat, clear the actual chat that OpenAI has too.
 - Support for tasks API.
-- try gpt 4.1 or wtv was being recommended in that one linkedin post
-
+- Try different GPT version (4.1/ option for more deterministic responses)
+- Support for non-primary calendars.
 - Publish Google Project/App.
 - Deploy.
 

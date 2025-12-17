@@ -4,10 +4,13 @@ export const getOpenAIResponse = async (prompt, onStreamData) => {
   try {
     console.log("Sending prompt to backend:", prompt);
 
+    const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone
+
     const response = await fetch(BACKEND_URL, {
       method: "POST",
       headers: {
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
+        "User-TimeZone": timeZone,
       },
       credentials: 'include',
       body: JSON.stringify({ prompt }),

@@ -1,6 +1,7 @@
 function GoogleCalendarIFrame() {
 
     const email_address = sessionStorage.getItem("email");
+    const user_timezone = Intl.DateTimeFormat().resolvedOptions().timeZone
 
 
     // Listener to reload iframe 
@@ -20,7 +21,7 @@ function GoogleCalendarIFrame() {
     return (
         <iframe 
             title= "Calendar"
-            src= {`https://calendar.google.com/calendar/embed?src=${email_address}&mode=AGENDA&showPrint=0&showCalendars=0&showTz=0`}
+            src= {`https://calendar.google.com/calendar/embed?src=${email_address}&mode=WEEK&showPrint=0&showCalendars=0&ctz=${user_timezone}`}
             className="sm:w-[90%] h-full"
             id = "calendarIFrame"
         >
