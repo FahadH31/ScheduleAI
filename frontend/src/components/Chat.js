@@ -118,7 +118,7 @@ const Chat = () => {
                 <img src={LogoutIcon} alt="Logout Icon" className="size-5" title="Log-out"></img>
             </button>
             <div className="flex items-center mt-8">
-                <h1 className="hidden sm:flow-root sm:text-3xl font-semibold text-center flex-grow">Google Calendar AI Assistant</h1>
+                <h1 className="hidden sm:flow-root sm:text-3xl font-semibold text-center flex-grow">ScheduleAI</h1>
             </div>
             {/* Clear Chat Button */}
             <button
@@ -135,7 +135,7 @@ const Chat = () => {
                         <p className="text-sm font-semibold text-green-400">Calendar Assistant</p>
                         <div className="prose prose-invert prose-sm max-w-none">
                             <ReactMarkdown>
-                                Welcome to the Google Calendar AI Assistant!
+                                Welcome to ScheduleAI!
                                 Effortlessly create, update, and delete events on your Google Calendar with simple prompts.
                                 Need advice on optimizing or improving your schedule? Feel free to ask!
                             </ReactMarkdown>
