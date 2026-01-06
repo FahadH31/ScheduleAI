@@ -20,6 +20,11 @@ export const getOpenAIResponse = async (prompt, onStreamData) => {
 
     if (!response.body) throw new Error("No response body");
 
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "An unexpected error occurred");
+    }
+
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
 
@@ -39,7 +44,7 @@ export const getOpenAIResponse = async (prompt, onStreamData) => {
     }
 
     // Trigger iframe reload (only if calendar action is taken)
-    if(action !== "OTHER"){
+    if (action !== "OTHER") {
       window.postMessage('reload', window.location.origin)
     }
 

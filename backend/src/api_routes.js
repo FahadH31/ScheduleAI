@@ -64,6 +64,11 @@ router.post("/api/openai", async (req, res) => {
       .status(400)
       .json({ success: false, error: "Invalid or missing 'prompt' field" });
   }
+  if(prompt.length > 500){
+    return res
+      .status(400)
+      .json({ success: false, error: "Prompt too long. Please ensure your entered message is less than 500 characters." });
+  }
 
   if(!req.session.conversationHistory){
     req.session.conversationHistory = [];

@@ -56,7 +56,7 @@ const Chat = () => {
             console.error("Error fetching OpenAI response:", error);
             setResponses((prev) => [
                 ...prev.slice(0, -1),
-                { user: message, ai: "Failed to fetch response. Please try again." },
+                { user: message, ai: error.message },
             ]);
         } finally {
             setLoading(false);
