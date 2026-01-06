@@ -3,7 +3,7 @@ const { openaiClient } = require('../authentication');
 const { CREATE_EVENT_FORMAT, MAX_DELETED_CACHE, COLOUR_IDS } = require('../constants');
 
 // Function to determine which operation the user would like to perform (create, update, delete, etc.)
-async function selectAction (prompt, upcomingEvents, conversationHistory) {
+async function selectAction(prompt, upcomingEvents, conversationHistory) {
   const classifyAction = await openaiClient.chat.completions.create({
     model: "gpt-4o-mini",
     temperature: 0.25,
@@ -125,13 +125,12 @@ async function createMultipleEvents(accessToken, prompt, currentDate, timeZone) 
   const eventsArray = Array.isArray(parsedResponse) ? parsedResponse : [parsedResponse];
   console.log("Events to create:", eventsArray);
 
-  const results = [];
   const auth = new google.auth.OAuth2();
   auth.setCredentials({ access_token: accessToken });
   const calendar = google.calendar({ version: "v3", auth });
 
-  // Loop through and insert all events into calendar
-  for (const eventData of eventsArray) {
+  // Insert all events into calendar 
+  const eventMap = eventsArray.map(async (eventData) => {
     try {
       const response = await calendar.events.insert({
         auth: auth,
@@ -139,22 +138,23 @@ async function createMultipleEvents(accessToken, prompt, currentDate, timeZone) 
         resource: eventData,
       });
 
-      results.push({
+      console.log(`Event "${eventData.summary}" created successfully`);
+      return {
         summary: eventData.summary,
         success: true,
         link: response.data.htmlLink
-      });
-
-      console.log(`Event "${eventData.summary}" created successfully`);
+      }
     } catch (error) {
       console.error(`Error creating event "${eventData.summary}":`, error);
-      results.push({
+      return {
         summary: eventData.summary || "Unknown event",
         success: false,
         error: error.message
-      });
+      };
     }
-  }
+  })
+
+  const results = await Promise.all(eventMap);
 
   return {
     success: results.every(r => r.success),
@@ -188,7 +188,7 @@ async function deleteEvents(accessToken, prompt, deletedEventsCache, currentDate
   const calendar = google.calendar({ version: 'v3', auth });
 
   const results = [];
-  
+
   // First, get full event details before deleting
   for (let i = 0; i < eventIdArray.length; i++) {
     try {
@@ -197,7 +197,7 @@ async function deleteEvents(accessToken, prompt, deletedEventsCache, currentDate
         calendarId: 'primary',
         eventId: eventIdArray[i],
       });
-      
+
       // Delete the event
       await calendar.events.delete({
         calendarId: 'primary',
@@ -210,7 +210,7 @@ async function deleteEvents(accessToken, prompt, deletedEventsCache, currentDate
         fullEvent: event.data,
         deletedAt: new Date().toISOString()
       });
-      
+
       // Keep cache size limited
       if (deletedEventsCache.length > MAX_DELETED_CACHE) {
         deletedEventsCache.pop();
@@ -241,9 +241,9 @@ async function deleteEvents(accessToken, prompt, deletedEventsCache, currentDate
 async function undoDelete(accessToken, prompt, deletedEventsCache) {
   // If there are no deleted events in the cache
   if (deletedEventsCache.length === 0) {
-    return { 
-      success: false, 
-      error: "No recently deleted events to restore" 
+    return {
+      success: false,
+      error: "No recently deleted events to restore"
     };
   }
 
@@ -277,18 +277,18 @@ async function undoDelete(accessToken, prompt, deletedEventsCache) {
 
   const indicesStr = undoCompletion.choices[0].message.content;
   const indicesToRestore = indicesStr.split(',').map(idx => parseInt(idx.trim()));
-  
+
   const auth = new google.auth.OAuth2();
   auth.setCredentials({ access_token: accessToken });
   const calendar = google.calendar({ version: 'v3', auth });
 
   const results = [];
-  
+
   for (const idx of indicesToRestore) {
     if (idx < 0 || idx >= deletedEventsCache.length) continue;
-    
+
     const deletedEvent = deletedEventsCache[idx];
-    
+
     try {
       // Create a clean version of the event for reinsertion
       // This removes fields that might cause conflicts
@@ -300,22 +300,22 @@ async function undoDelete(accessToken, prompt, deletedEventsCache) {
       delete eventToRestore.sequence;
       delete eventToRestore.created;
       delete eventToRestore.updated;
-      
+
       // Insert the event as a new event
       const response = await calendar.events.insert({
         calendarId: 'primary',
         resource: eventToRestore,
       });
-      
+
       // Remove the restored event from our cache
       deletedEventsCache.splice(idx, 1);
-      
+
       results.push({
         summary: eventToRestore.summary || "Unknown event",
         success: true,
         newEventId: response.data.id
       });
-      
+
       console.log(`Event "${eventToRestore.summary}" restored successfully with new ID: ${response.data.id}`);
     } catch (error) {
       console.error(`Error restoring event:`, error);
@@ -326,7 +326,7 @@ async function undoDelete(accessToken, prompt, deletedEventsCache) {
       });
     }
   }
-  
+
   return {
     success: results.length > 0 && results.every(r => r.success),
     results: results
@@ -431,7 +431,7 @@ async function updateMultipleEvents(accessToken, prompt, currentDate, timeZone, 
   let updatesArray;
   try {
     const parsedResponse = JSON.parse(updateMultipleEventsCompletion.choices[0].message.content);
-    
+
     // Check if the response is the expected array or if it's wrapped in an object (openai response format can be unreliable)
     if (Array.isArray(parsedResponse)) {
       updatesArray = parsedResponse;
@@ -441,7 +441,7 @@ async function updateMultipleEvents(accessToken, prompt, currentDate, timeZone, 
       // Handle single object case
       updatesArray = [parsedResponse];
     }
-    
+
     console.log("Events to update:", updatesArray);
   } catch (error) {
     console.error("Error parsing JSON response:", error);
@@ -452,8 +452,7 @@ async function updateMultipleEvents(accessToken, prompt, currentDate, timeZone, 
   auth.setCredentials({ access_token: accessToken });
   const calendar = google.calendar({ version: 'v3', auth });
 
-  const results = [];
-  for (const update of updatesArray) {
+  const updatesMap = updatesArray.map(async (update) => {
     try {
       // Verify the update object has the required structure
       if (!update.eventId || !update.updatedEvent) {
@@ -467,7 +466,7 @@ async function updateMultipleEvents(accessToken, prompt, currentDate, timeZone, 
       });
 
       console.log(`Event with ID ${update.eventId} updated successfully.`);
-      results.push({
+      return {
         eventId: update.eventId,
         success: true,
         data: {
@@ -475,16 +474,18 @@ async function updateMultipleEvents(accessToken, prompt, currentDate, timeZone, 
           start: response.data.start,
           end: response.data.end
         }
-      });
+      };
     } catch (error) {
       console.error(`Error updating event ${update.eventId || 'unknown'}:`, error);
-      results.push({
+      return {
         eventId: update.eventId || 'unknown',
         success: false,
         error: error.message
-      });
+      };
     }
-  }
+  })
+
+  const results = await Promise.all(updatesMap)
 
   return {
     success: results.length > 0 && results.every(r => r.success),
