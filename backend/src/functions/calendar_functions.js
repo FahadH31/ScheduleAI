@@ -1,8 +1,5 @@
 const { google } = require('googleapis');
 
-const deletedEventsCache = [];
-const conversationHistory = [];
-
 // Function to get the user's upcoming events
 async function getUpcomingEvents(accessToken) {
   const auth = new google.auth.OAuth2();
@@ -44,7 +41,5 @@ async function getUpcomingEvents(accessToken) {
 }
 
 module.exports = {
-  getUpcomingEvents,
-  deletedEventsCache,
-  conversationHistory
+  getUpcomingEvents
 };

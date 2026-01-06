@@ -3,7 +3,7 @@ const axios = require('axios');
 const date = require('date-and-time');
 const { oAuth2Client } = require('./authentication');
 const { openaiClient } = require('./authentication');
-const { getUpcomingEvents, conversationHistory } = require('./functions/calendar_functions');
+const { getUpcomingEvents } = require('./functions/calendar_functions');
 const {
   selectAction,
   createEvent,
@@ -65,11 +65,19 @@ router.post("/api/openai", async (req, res) => {
       .json({ success: false, error: "Invalid or missing 'prompt' field" });
   }
 
-  conversationHistory.push({ role: "user", content: prompt }); // Add the user input to the conversation history
+  if(!req.session.conversationHistory){
+    req.session.conversationHistory = [];
+  }
+
+  if(!req.session.deletedEventsCache){
+    req.session.deletedEventsCache = [];
+  }
+
+  req.session.conversationHistory.push({ role: "user", content: prompt }); // Add the user input to the conversation history
 
   // Limit length of the conversation history
-  if (conversationHistory.length > 8) {
-    conversationHistory.shift(); // remove the oldest message
+  if (req.session.conversationHistory.length > 8) {
+    req.session.conversationHistory.shift(); // remove the oldest message
   }
 
   // Get the current date/time.
@@ -89,7 +97,7 @@ router.post("/api/openai", async (req, res) => {
   upcomingEvents = JSON.stringify(upcomingEvents);
 
   // Determine which action the user wishes to perform
-  const calendarAction = await selectAction(prompt, upcomingEvents);
+  const calendarAction = await selectAction(prompt, upcomingEvents, req.session.conversationHistory);
 
   // Action result to track operation success
   let actionResult = null;
@@ -103,7 +111,7 @@ router.post("/api/openai", async (req, res) => {
       actionResult = await createMultipleEvents(access_token, prompt, currentDate, timeZone);
     }
     else if (calendarAction === "DELETE_EVENT") {
-      actionResult = await deleteEvents(access_token, prompt, currentDate, timeZone, upcomingEvents);
+      actionResult = await deleteEvents(access_token, prompt, req.session.deletedEventsCache, currentDate, timeZone, upcomingEvents);
     }
     else if (calendarAction === "UPDATE_EVENT") {
       actionResult = await updateEvent(access_token, prompt, currentDate,  timeZone, upcomingEvents);
@@ -112,7 +120,7 @@ router.post("/api/openai", async (req, res) => {
       actionResult = await updateMultipleEvents(access_token, prompt, currentDate, timeZone, upcomingEvents);
     }
     else if (calendarAction === "UNDO_DELETE") {
-      actionResult = await undoDelete(access_token, prompt);
+      actionResult = await undoDelete(access_token, prompt, req.session.deletedEventsCache);
     }
 
     // OpenAI call to provide the user a response in the chat.
@@ -132,7 +140,7 @@ router.post("/api/openai", async (req, res) => {
           - Only refer to this information if needed per the user's request.
         - Never provide the user with their upcoming schedule data or event URLs directly in the chat. 
         You will now be provided with the user's latest few messages. Respond to the newest one.`},
-        ...conversationHistory,
+        ...req.session.conversationHistory,
         { role: "user", content: prompt },
       ],
       stream: true,

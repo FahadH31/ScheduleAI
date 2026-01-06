@@ -1,10 +1,9 @@
 const { google } = require('googleapis');
 const { openaiClient } = require('../authentication');
-const { deletedEventsCache, conversationHistory } = require('./calendar_functions');
 const { CREATE_EVENT_FORMAT, MAX_DELETED_CACHE, COLOUR_IDS } = require('../constants');
 
 // Function to determine which operation the user would like to perform (create, update, delete, etc.)
-async function selectAction (prompt, upcomingEvents) {
+async function selectAction (prompt, upcomingEvents, conversationHistory) {
   const classifyAction = await openaiClient.chat.completions.create({
     model: "gpt-4o-mini",
     temperature: 0.25,
@@ -164,7 +163,7 @@ async function createMultipleEvents(accessToken, prompt, currentDate, timeZone) 
 }
 
 // Function to delete an event from the user's Google Calendar
-async function deleteEvents(accessToken, prompt, currentDate, timeZone, upcomingEvents) {
+async function deleteEvents(accessToken, prompt, deletedEventsCache, currentDate, timeZone, upcomingEvents) {
   const deleteEventCompletion = await openaiClient.chat.completions.create({
     model: "gpt-3.5-turbo",
     temperature: 0.25,
@@ -239,7 +238,7 @@ async function deleteEvents(accessToken, prompt, currentDate, timeZone, upcoming
 }
 
 // Function to undo event deletions
-async function undoDelete(accessToken, prompt) {
+async function undoDelete(accessToken, prompt, deletedEventsCache) {
   // If there are no deleted events in the cache
   if (deletedEventsCache.length === 0) {
     return { 
