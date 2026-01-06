@@ -16,9 +16,7 @@ app.use(session({
   httpOnly: true,
   saveUninitialized: false,
   resave: false
-})
-
-)
+}))
 app.use(express.json());
 app.use('/', apiRoutes);
 

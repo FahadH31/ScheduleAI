@@ -1,4 +1,5 @@
 const express = require('express');
+const ratelimit = require('express-rate-limit')
 const axios = require('axios');
 const date = require('date-and-time');
 const { oAuth2Client } = require('./authentication');
@@ -15,6 +16,19 @@ const {
 } = require('./functions/openai_functions');
 
 const router = express.Router();
+
+// Rate limit config
+const limiter = ratelimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 25,
+  message: { 
+    success: false, 
+    error: "You're sending messages too fast. Please wait a few minutes before trying again." 
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+  ipv6Subnet: 56,
+})
 
 // Authentication Check Route
 router.get("/api/check-auth", (req, res) => {
@@ -56,7 +70,7 @@ router.post("/api/google-auth", async (req, res) => {
 
 
 // OpenAI Chat Route
-router.post("/api/openai", async (req, res) => {
+router.post("/api/openai", limiter, async (req, res) => {
   // User prompt
   const { prompt } = req.body;
   if (!prompt || typeof prompt !== "string") {
