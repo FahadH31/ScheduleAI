@@ -2,9 +2,12 @@ const { google } = require('googleapis');
 const { openaiClient } = require('../authentication');
 const { CREATE_EVENT_FORMAT, MAX_DELETED_CACHE, COLOUR_IDS } = require('../constants');
 
-async function callFunction(accessToken, name, args){
-  if(name == "createEvent"){
+async function callFunction(accessToken, name, args, deletedEventsCache) {
+  if (name == "createEvent") {
     return await createEvent(accessToken, args)
+  }
+  if (name == "deleteEvent") {
+    return await deleteEvent(accessToken, args.eventId, deletedEventsCache)
   }
 }
 
@@ -34,72 +37,50 @@ async function createEvent(accessToken, eventData) {
 }
 
 // Function to delete an event from the user's Google Calendar
-async function deleteEvent(accessToken, prompt, deletedEventsCache, currentDate, timeZone, upcomingEvents) {
-  const deleteEventCompletion = await openaiClient.chat.completions.create({
-    model: "gpt-3.5-turbo",
-    temperature: 0.25,
-    messages: [
-      {
-        role: "system",
-        content: `You are an assistant that deletes events using Google Calendar. 
-            The current date/time is ${currentDate}. The user's timezone is ${timeZone}.
-            When asked to delete any number of events, you will identify the correct events to delete 
-            and respond with ONLY the event ids in a comma seperated list, regardless of user input. 
-            Following are the user's upcoming events with their IDs: ${upcomingEvents}`
-      },
-      { role: "user", content: prompt },
-    ],
-  });
-
-  eventIds = deleteEventCompletion.choices[0].message.content;
-  var eventIdArray = eventIds.split(',').map(id => id.trim());
-
+async function deleteEvent(accessToken, eventId, deletedEventsCache) {
   const auth = new google.auth.OAuth2();
   auth.setCredentials({ access_token: accessToken });
   const calendar = google.calendar({ version: 'v3', auth });
 
   const results = [];
 
-  // First, get full event details before deleting
-  for (let i = 0; i < eventIdArray.length; i++) {
-    try {
-      // Get the full event details before deletion
-      const event = await calendar.events.get({
-        calendarId: 'primary',
-        eventId: eventIdArray[i],
-      });
+  try {
+    // Get the full event details before deletion
+    const event = await calendar.events.get({
+      calendarId: 'primary',
+      eventId: eventId,
+    });
 
-      // Delete the event
-      await calendar.events.delete({
-        calendarId: 'primary',
-        eventId: eventIdArray[i],
-      });
+    // Delete the event
+    await calendar.events.delete({
+      calendarId: 'primary',
+      eventId: eventId,
+    });
 
-      // Store the deleted event in our cache
-      deletedEventsCache.unshift({
-        eventId: eventIdArray[i],
-        fullEvent: event.data,
-        deletedAt: new Date().toISOString()
-      });
+    // Store the deleted event in our cache
+    deletedEventsCache.unshift({
+      eventId: eventId,
+      fullEvent: event.data,
+      deletedAt: new Date().toISOString()
+    });
 
-      // Keep cache size limited
-      if (deletedEventsCache.length > MAX_DELETED_CACHE) {
-        deletedEventsCache.pop();
-      }
-
-      console.log(`Event with ID ${eventIdArray[i]} deleted successfully.`);
-      results.push({
-        eventId: eventIdArray[i],
-        success: true
-      });
-    } catch (error) {
-      console.error(`Error deleting event ${eventIdArray[i]}:`, error);
-      results.push({
-        eventId: eventIdArray[i],
-        success: false,
-        error: error.message
-      });
+    // Keep cache size limited
+    if (deletedEventsCache.length > MAX_DELETED_CACHE) {
+      deletedEventsCache.pop();
     }
+
+    console.log(`Event with ID ${eventId} deleted successfully.`);
+    results.push({
+      eventId: eventId,
+      success: true
+    });
+  } catch (error) {
+    console.error(`Error deleting event ${eventId}:`, error);
+    results.push({
+      eventId: eventId,
+      success: false,
+      error: error.message
+    });
   }
 
   return {
@@ -258,4 +239,4 @@ async function updateEvent(accessToken, prompt, currentDate, timeZone, upcomingE
   }
 }
 
-module.exports = {callFunction};
+module.exports = { callFunction };

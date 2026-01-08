@@ -5,7 +5,7 @@ const date = require('date-and-time');
 const { oAuth2Client } = require('./authentication');
 const { openaiClient } = require('./authentication');
 const { getUpcomingEvents } = require('./functions/calendar_functions');
-const { tools } = require('./functions/function_schema');
+const { tools } = require('./functions/function_schemas');
 const { callFunction } = require('./functions/openai_functions');
 const { CONVERSATION_HISTORY_LENGTH } = require('./constants');
 
@@ -116,11 +116,11 @@ router.post("/api/openai", limiter, async (req, res) => {
           role: "system",
           content: `
           You are a logic engine used to help a user interact (create/update/delete events) with their Google Calendar. 
-          Your only goal is to use the provided tools to fulfill the user's request/message. 
-          Fill details intelligently as you deem suitable based on your knowledge of the user/world. 
-          Ex. If the user is from Toronto and they are flying to Ottawa, schedule the duration of the event appropriately (~1hr in this case).
+          Your only goal is to use the provided tools to fulfill the user's latest message. 
+          For create/update requests, fill details intelligently as you deem suitable based on your knowledge of the user and world. 
+          Example: If the user is from Toronto and they are flying to Vancouver, the duration of the event should match the real-world travel time between the cities by plane.
           If further details would be beneficial, respond with text stating so.
-          If no tool is needed, respond with text that states this.
+          If no tool is needed, respond with text that states so.
           - The current date/time is ${currentDate}.
           - The user's timezone is ${timeZone}
           - Information on the user's upcoming schedule: ${upcomingEvents}. 
@@ -141,7 +141,7 @@ router.post("/api/openai", limiter, async (req, res) => {
         const name = toolCall.function.name;
         calendarAction = name; // update calendarAction
         const args = JSON.parse(toolCall.function.arguments);
-        const result = await callFunction(access_token, name, args)
+        const result = await callFunction(access_token, name, args, req.session.deletedEventsCache)
         console.log(`Called function: ${name} with result: ${JSON.stringify(result)}`)
         req.session.conversationHistory.push({ // add results of this tool call into convo history
           role: "tool",
@@ -159,15 +159,13 @@ router.post("/api/openai", limiter, async (req, res) => {
           role: "system",
           content: ` 
           You are an assistant that handles the in-chat conversation with the user using this service to interact with their Google Calendar. 
+          Please provide a concise, friendly response that matches with the result of the function(s) called. 
+          Respond as if you just executed the function(s) yourself. If no function was called or an error occurred, respond accordingly.   
+          Don't ask for another prompt from the user if the action has been performed successfully. You can schedule overlapping events without issue.
           - The current date/time is ${currentDate}.
           - The user's timezone is ${timeZone}
-          - Please provide a concise, friendly response that matches with the result of the function(s) called. Respond as if you just executed the function(s) yourself.
-          - If no function was called, respond accordingly.   
-          - Don't ask for another prompt from the user if the action has been performed successfully.
-          - You can schedule multiple overlapping events without issue.
           - Information on the user's upcoming schedule: ${upcomingEvents}. 
-            - Only refer to this information if needed per the user's request.
-            - Never provide the user with their upcoming schedule data or event URLs directly in the chat.`
+          - Only refer to this information if needed per the user's request. Never provide the user with their upcoming schedule data or event URLs directly in the chat.`
         },
         ...req.session.conversationHistory
       ],
