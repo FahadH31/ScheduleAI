@@ -115,9 +115,12 @@ router.post("/api/openai", limiter, async (req, res) => {
         {
           role: "system",
           content: `
-          You are a logic engine used to help a user interact with their Google Calendar. 
+          You are a logic engine used to help a user interact (create/update/delete events) with their Google Calendar. 
           Your only goal is to use the provided tools to fulfill the user's request/message. 
-          If no tool is needed or further details are needed, respond with text that states this.
+          Fill details intelligently as you deem suitable based on your knowledge of the user/world. 
+          Ex. If the user is from Toronto and they are flying to Ottawa, schedule the duration of the event appropriately (~1hr in this case).
+          If further details would be beneficial, respond with text stating so.
+          If no tool is needed, respond with text that states this.
           - The current date/time is ${currentDate}.
           - The user's timezone is ${timeZone}
           - Information on the user's upcoming schedule: ${upcomingEvents}. 
@@ -130,7 +133,6 @@ router.post("/api/openai", limiter, async (req, res) => {
     });
 
     const toolSelectionResult = toolSelectionCompletion.choices[0].message
-    console.log(`Tool Selection Result: ${JSON.stringify(toolSelectionResult)}`)
     req.session.conversationHistory.push(toolSelectionResult); // add the assistant message that requested tool call into convo history
 
     // If tools returned by the API call, collect them and call the appropriate function
