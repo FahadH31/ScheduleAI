@@ -2,65 +2,14 @@ const { google } = require('googleapis');
 const { openaiClient } = require('../authentication');
 const { CREATE_EVENT_FORMAT, MAX_DELETED_CACHE, COLOUR_IDS } = require('../constants');
 
-// Function to determine which operation the user would like to perform (create, update, delete, etc.)
-async function selectAction(prompt, upcomingEvents, conversationHistory) {
-  const classifyAction = await openaiClient.chat.completions.create({
-    model: "gpt-4o-mini",
-    temperature: 0.25,
-    messages: [
-      {
-        role: "system",
-        content: `
-        Classify the user's intent into one of the following categories. You are restricted to these options only: 
-        - "CREATE_EVENT": If the user wants to create or schedule a single event (even if this is recurring). Or, if they describe an upcoming event that doesn't already exist. 
-        - "CREATE_MULTIPLE_EVENTS": If the user wants to create or schedule multiple events at once.
-        - "DELETE_EVENT": If the user wants to delete any event(s).
-        - "UPDATE_EVENT": If the user wants to update a single existing event.
-        - "UPDATE_MULTIPLE_EVENTS": If the user wants to update multiple existing events at once.
-        - "UNDO_DELETE": If the user wants to undo or restore any recently deleted event(s). Ensure they are asking for an UNDO, not just a deletion.
-        - "OTHER": For all other requests.
-        ONLY return the classifier, nothing else, regardless of the user input. 
-        Here is the user's schedule information as context to help you in the classification: ${upcomingEvents}. 
-        Act on the most recent user message.
-        `,
-      },
-      ...conversationHistory,
-      { role: "user", content: prompt },
-    ]
-  });
-
-  const action = classifyAction.choices[0].message.content;
-  console.log("Action Classification:", action);
-  return action;
+async function callFunction(accessToken, name, args){
+  if(name == "createEvent"){
+    return await createEvent(accessToken, args)
+  }
 }
 
 // Function to create an event for the user's Google Calendar
-async function createEvent(accessToken, prompt, currentDate, timeZone) {
-  // Generate the structured event data from user input, via an OpenAI call. 
-  const createEventCompletion = await openaiClient.chat.completions.create({
-    model: "gpt-4o-mini",
-    temperature: 0.25,
-    messages: [
-      {
-        role: "system",
-        content: `
-        You are an assistant that creates events using Google Calendar.
-        - The current date/time is ${currentDate}.
-        - When asked to create an event, you will ONLY respond in a structured format, exactly like this JSON example:
-        ${CREATE_EVENT_FORMAT}
-        - The only mandatory fields are the start and end time (in ISO 8601 format).
-        - Fill the other fields as you deem suitable. 
-        - ENSURE the correct desired color is set based on the following list: ${COLOUR_IDS} 
-        - Don't set notifications, email addresses, or recurring events unless the user directly instructs you to do so.
-        - Don't set a location unless you can determine an appropriate one from the user's input (do not make-up locations).
-        - The user's timezone is ${timeZone}.
-        - Ensure the dates exist in the calendar (e.g., no February 29th in non-leap years).`
-      },
-      { role: "user", content: prompt },
-    ],
-  });
-
-  eventData = JSON.parse(createEventCompletion.choices[0].message.content);
+async function createEvent(accessToken, eventData) {
   console.log(eventData);
 
   // Insert the data 
@@ -494,7 +443,7 @@ async function updateMultipleEvents(accessToken, prompt, currentDate, timeZone, 
 }
 
 module.exports = {
-  selectAction,
+  callFunction,
   createEvent,
   createMultipleEvents,
   deleteEvents,
