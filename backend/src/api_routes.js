@@ -124,6 +124,7 @@ router.post("/api/openai", limiter, async (req, res) => {
           - The current date/time is ${currentDate}.
           - The user's timezone is ${timeZone}
           - Information on the user's upcoming schedule: ${upcomingEvents}. 
+          - Recently deleted events: ${JSON.stringify(req.session.deletedEventsCache)}
           `
         },
         ...req.session.conversationHistory

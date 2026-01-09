@@ -9,6 +9,9 @@ async function callFunction(accessToken, name, args, deletedEventsCache) {
   if (name == "deleteEvent") {
     return await deleteEvent(accessToken, args.eventId, deletedEventsCache)
   }
+  if (name == "undoDelete"){
+    return await undoDelete(accessToken, args.eventIndices, deletedEventsCache)
+  }
 }
 
 // Function to create an event for the user's Google Calendar
@@ -90,7 +93,7 @@ async function deleteEvent(accessToken, eventId, deletedEventsCache) {
 }
 
 // Function to undo event deletions
-async function undoDelete(accessToken, prompt, deletedEventsCache) {
+async function undoDelete(accessToken, eventIndices, deletedEventsCache) {
   // If there are no deleted events in the cache
   if (deletedEventsCache.length === 0) {
     return {
@@ -99,47 +102,16 @@ async function undoDelete(accessToken, prompt, deletedEventsCache) {
     };
   }
 
-  const undoCompletion = await openaiClient.chat.completions.create({
-    model: "gpt-3.5-turbo",
-    temperature: 0.25,
-    messages: [
-      {
-        role: "system",
-        content: `You are an assistant that helps users restore recently deleted Google Calendar events.
-        The user wants to undo a deletion. Based on their prompt and the list of recently deleted events,
-        determine which events they want to restore. If they don't specify or just say "undo delete", 
-        assume they want to restore the most recently deleted event.
-        RESPOND ONLY with the indices (starting from 0) of the deletedEventsCache array to restore, 
-        comma-separated if multiple. For example: "0" or "0,2,3".
-        Here are the recently deleted events:
-        ${JSON.stringify(deletedEventsCache.map((item, index) => {
-          const event = item.fullEvent;
-          return {
-            index,
-            summary: event.summary,
-            start: event.start,
-            end: event.end,
-            deletedAt: item.deletedAt
-          };
-        }))}`
-      },
-      { role: "user", content: prompt },
-    ],
-  });
-
-  const indicesStr = undoCompletion.choices[0].message.content;
-  const indicesToRestore = indicesStr.split(',').map(idx => parseInt(idx.trim()));
-
   const auth = new google.auth.OAuth2();
   auth.setCredentials({ access_token: accessToken });
   const calendar = google.calendar({ version: 'v3', auth });
 
   const results = [];
 
-  for (const idx of indicesToRestore) {
-    if (idx < 0 || idx >= deletedEventsCache.length) continue;
+  for (const i of eventIndices) {
+    if (i < 0 || i >= deletedEventsCache.length) continue;
 
-    const deletedEvent = deletedEventsCache[idx];
+    const deletedEvent = deletedEventsCache[i];
 
     try {
       // Create a clean version of the event for reinsertion
@@ -159,8 +131,8 @@ async function undoDelete(accessToken, prompt, deletedEventsCache) {
         resource: eventToRestore,
       });
 
-      // Remove the restored event from our cache
-      deletedEventsCache.splice(idx, 1);
+      // Remove the restored event from cache
+      deletedEventsCache.splice(i, 1);
 
       results.push({
         summary: eventToRestore.summary || "Unknown event",

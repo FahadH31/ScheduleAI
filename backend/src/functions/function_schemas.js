@@ -135,7 +135,28 @@ tools = [
                 "required": ["eventId"]
             }
         }
-    }]
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "undoDelete",
+            "description": "A function to restore events deleted from the user's Google Calendar.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "eventIndices": {
+                        "type": "array",
+                        "items": {
+                            "type": "integer"
+                        },
+                        "description": "The indices of the events (starting from 0) in the deletedEventsCache to restore, comma-separated if multiple. For example: '0' or '0,2,3'"
+                    }
+                },
+                "required":["eventIndices"]
+            }
+        }
+    }
+]
 
 module.exports = {
     tools
