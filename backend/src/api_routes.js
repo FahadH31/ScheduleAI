@@ -2,12 +2,9 @@ const express = require('express');
 const ratelimit = require('express-rate-limit')
 const axios = require('axios');
 const date = require('date-and-time');
-const { oAuth2Client } = require('./authentication');
-const { openaiClient } = require('./authentication');
-const { getUpcomingEvents } = require('./functions/calendar_functions');
-const { tools } = require('./functions/function_schemas');
-const { callFunction } = require('./functions/openai_functions');
-const { CONVERSATION_HISTORY_LENGTH } = require('./constants');
+const { openaiClient, oAuth2Client } = require('./authentication');
+const { callFunction, getUpcomingEvents } = require('./calendar_functions');
+const { CONVERSATION_HISTORY_LENGTH, TOOLS } = require('./constants');
 
 const router = express.Router();
 
@@ -69,9 +66,6 @@ router.post("/api/openai", limiter, async (req, res) => {
   if (!req.session.conversationHistory) {
     req.session.conversationHistory = [];
   }
-  if (!req.session.deletedEventsCache) {
-    req.session.deletedEventsCache = [];
-  }
   if (!req.session.tokens) {
     return res.status(401).json({ error: "Not authenticated" });
   }
@@ -124,12 +118,11 @@ router.post("/api/openai", limiter, async (req, res) => {
           - The current date/time is ${currentDate}.
           - The user's timezone is ${timeZone}
           - Information on the user's upcoming schedule: ${upcomingEvents}. Use this to obtain the event ID for 'updateEvent' tool calls. 
-          - Recently deleted events: ${JSON.stringify(req.session.deletedEventsCache)}
           `
         },
         ...req.session.conversationHistory
       ],
-      tools: tools,
+      tools: TOOLS,
       max_completion_tokens: 500,
     });
 
@@ -142,7 +135,7 @@ router.post("/api/openai", limiter, async (req, res) => {
         const name = toolCall.function.name;
         calendarAction = name; // update calendarAction
         const args = JSON.parse(toolCall.function.arguments);
-        const result = await callFunction(access_token, name, args, req.session.deletedEventsCache)
+        const result = await callFunction(access_token, name, args)
         console.log(`Called function: ${name} with result: ${JSON.stringify(result.success)}`)
         req.session.conversationHistory.push({ // add results of this tool call into convo history
           role: "tool",
