@@ -117,13 +117,13 @@ router.post("/api/openai", limiter, async (req, res) => {
           content: `
           You are a logic engine used to help a user interact (create/update/delete events) with their Google Calendar. 
           Your only goal is to use the provided tools to fulfill the user's latest message. 
-          For create/update requests, fill details intelligently as you deem suitable based on your knowledge of the user and world. 
+          For create requests, fill details intelligently as you deem suitable based on your knowledge of the user and world. 
           Example: If the user is from Toronto and they are flying to Vancouver, the duration of the event should match the real-world travel time between the cities by plane.
           If further details would be beneficial, respond with text stating so.
-          If no tool is needed, respond with text that states so.
+          If no tool is needed, respond with text that states so. Following is data you can use to guide your tool calls: 
           - The current date/time is ${currentDate}.
           - The user's timezone is ${timeZone}
-          - Information on the user's upcoming schedule: ${upcomingEvents}. 
+          - Information on the user's upcoming schedule: ${upcomingEvents}. Use this to obtain the event ID for 'updateEvent' tool calls. 
           - Recently deleted events: ${JSON.stringify(req.session.deletedEventsCache)}
           `
         },
@@ -143,7 +143,7 @@ router.post("/api/openai", limiter, async (req, res) => {
         calendarAction = name; // update calendarAction
         const args = JSON.parse(toolCall.function.arguments);
         const result = await callFunction(access_token, name, args, req.session.deletedEventsCache)
-        console.log(`Called function: ${name} with result: ${JSON.stringify(result)}`)
+        console.log(`Called function: ${name} with result: ${JSON.stringify(result.success)}`)
         req.session.conversationHistory.push({ // add results of this tool call into convo history
           role: "tool",
           tool_call_id: toolCall.id,

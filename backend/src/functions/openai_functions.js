@@ -1,15 +1,17 @@
 const { google } = require('googleapis');
-const { openaiClient } = require('../authentication');
-const { CREATE_EVENT_FORMAT, MAX_DELETED_CACHE, COLOUR_IDS } = require('../constants');
+const { MAX_DELETED_CACHE } = require('../constants');
 
 async function callFunction(accessToken, name, args, deletedEventsCache) {
   if (name == "createEvent") {
     return await createEvent(accessToken, args)
   }
+  if (name == "updateEvent") {
+    return await updateEvent(accessToken, args)
+  }
   if (name == "deleteEvent") {
     return await deleteEvent(accessToken, args.eventId, deletedEventsCache)
   }
-  if (name == "undoDelete"){
+  if (name == "undoDelete") {
     return await undoDelete(accessToken, args.eventIndices, deletedEventsCache)
   }
 }
@@ -36,6 +38,31 @@ async function createEvent(accessToken, eventData) {
   } catch (error) {
     console.error("Error creating event:", error);
     throw new Error("Failed to create Google Calendar event");
+  }
+}
+
+// Function to update an event on the user's Google Calendar
+async function updateEvent(accessToken, eventData) {
+
+  const eventId = eventData.eventId
+  const updatedEvent = eventData.updatedEventData
+
+  const auth = new google.auth.OAuth2();
+  auth.setCredentials({ access_token: accessToken });
+  const calendar = google.calendar({ version: 'v3', auth });
+
+  try {
+    const response = await calendar.events.patch({
+      calendarId: 'primary',
+      eventId: eventId,
+      resource: updatedEvent,
+    });
+
+    console.log(`Event with ID: ${eventId} updated successfully.`);
+    return { success: true, data: response.data };
+  } catch (error) {
+    console.error('Error updating event:', error);
+    return { success: false, error: error.message };
   }
 }
 
@@ -157,58 +184,6 @@ async function undoDelete(accessToken, eventIndices, deletedEventsCache) {
   };
 }
 
-// Function to update an event on the user's Google Calendar
-async function updateEvent(accessToken, prompt, currentDate, timeZone, upcomingEvents) {
-  const updateEventCompletion = await openaiClient.chat.completions.create({
-    model: "gpt-4o-mini",
-    temperature: 0.25,
-    messages: [
-      {
-        role: "system",
-        content: `
-            You are an assistant that updates events using Google Calendar.
-            DO NOT change the location, time, recurrence, or color unless the user CLEARLY/DIRECTLY instructs you to do so.
-            The current date/time is ${currentDate}. The user's timezone is ${timeZone}.
-            When asked to update an event, you will:
-            1. Identify the correct event to update based on user input and the upcoming events list.
-            2. Respond ONLY with a JSON object in this format:
-                  {
-                    "eventId": "EVENT_ID_HERE",
-                    "updatedEvent": {
-                      ${CREATE_EVENT_FORMAT}
-                    }
-                  }
-            
-            Update ONLY the details you deem appropriate based on the user input.
-            If applicable, colours must be chosen from the following list: ${COLOUR_IDS}  
-            Ensure the dates exist in the calendar (e.g no February 29th in non-leap years).
-            Following are the user's upcoming events with their IDs: ${upcomingEvents}`
-      },
-      { role: "user", content: prompt },
-    ],
-    response_format: { type: "json_object" }
-  });
 
-  console.log(updateEventCompletion.choices[0].message.content);
-  const { eventId, updatedEvent } = JSON.parse(updateEventCompletion.choices[0].message.content);
-
-  const auth = new google.auth.OAuth2();
-  auth.setCredentials({ access_token: accessToken });
-  const calendar = google.calendar({ version: 'v3', auth });
-
-  try {
-    const response = await calendar.events.patch({
-      calendarId: 'primary',
-      eventId: eventId,
-      resource: updatedEvent,
-    });
-
-    console.log(`Event with ID ${eventId} updated successfully.`);
-    return { success: true, data: response.data };
-  } catch (error) {
-    console.error('Error updating event:', error);
-    return { success: false, error: error.message };
-  }
-}
 
 module.exports = { callFunction };
