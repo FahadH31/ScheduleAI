@@ -252,6 +252,13 @@ TOOLS = [
                 "required": ["eventId"]
             }
         }
+    },
+    {
+        "type": "function",
+        "function":{
+            "name": "undoPrompt",
+            "description": "Function to undo the commands executed as a result of a user prompt."
+        }
     }
 ]
 

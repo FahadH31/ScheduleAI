@@ -1,7 +1,7 @@
 const { google } = require('googleapis');
 
 // Function router
-async function callFunction(accessToken, name, args) {
+async function callFunction(accessToken, name, args, undoStack) {
   if (name == "createEvent") {
     return await createEvent(accessToken, args)
   }
@@ -10,6 +10,9 @@ async function callFunction(accessToken, name, args) {
   }
   if (name == "deleteEvent") {
     return await deleteEvent(accessToken, args.eventId)
+  }
+  if (name == "undoPrompt") {
+    return await undoPrompt(accessToken, undoStack)
   }
 }
 
@@ -69,8 +72,10 @@ async function createEvent(accessToken, eventData) {
       resource: eventData,
     });
 
+    const undoAction = { name: "deleteEvent", data: { eventId: response.data.id } }
+
     console.log("Event created successfully");
-    return { success: true, link: response.data.htmlLink };
+    return { success: true, link: response.data.htmlLink, undoAction: undoAction };
 
   } catch (error) {
     console.error("Error creating event:", error);
@@ -80,7 +85,6 @@ async function createEvent(accessToken, eventData) {
 
 // Function to update an event on the user's Google Calendar
 async function updateEvent(accessToken, eventData) {
-
   const eventId = eventData.eventId
   const updatedEvent = eventData.updatedEventData
 
@@ -89,14 +93,24 @@ async function updateEvent(accessToken, eventData) {
   const calendar = google.calendar({ version: 'v3', auth });
 
   try {
+    const originalEventData = await calendar.events.get({ // get original event data for undo functionality
+      auth: auth,
+      calendarId: "primary",
+      eventId: eventId
+    });
+
+    delete originalEventData.data.id // remove the id to avoid conflict when restoring the event
+
     const response = await calendar.events.patch({
       calendarId: 'primary',
       eventId: eventId,
       resource: updatedEvent,
     });
 
+    const undoAction = { name: "updateEvent", data: { eventId: eventId, updatedEventData: originalEventData.data } }
+
     console.log(`Event with ID: ${eventId} updated successfully.`);
-    return { success: true, data: response.data };
+    return { success: true, data: response.data, undoAction: undoAction };
   } catch (error) {
     console.error('Error updating event:', error);
     return { success: false, error: error.message };
@@ -109,13 +123,12 @@ async function deleteEvent(accessToken, eventId) {
   auth.setCredentials({ access_token: accessToken });
   const calendar = google.calendar({ version: 'v3', auth });
 
-  const results = [];
-
   try {
-    // Get the full event details before deletion
-    const event = await calendar.events.get({
-      calendarId: 'primary',
-      eventId: eventId,
+    // Get event details before deletion for undo functionality
+    const originalEventData = await calendar.events.get({
+      auth: auth,
+      calendarId: "primary",
+      eventId: eventId
     });
 
     // Delete the event
@@ -124,24 +137,33 @@ async function deleteEvent(accessToken, eventId) {
       eventId: eventId,
     });
 
+    const undoAction = { name: "createEvent", data: originalEventData.data }
+
     console.log(`Event with ID ${eventId} deleted successfully.`);
-    results.push({
-      eventId: eventId,
-      success: true
-    });
+    return { eventId: eventId, success: true, undoAction: undoAction }
   } catch (error) {
     console.error(`Error deleting event ${eventId}:`, error);
-    results.push({
-      eventId: eventId,
-      success: false,
-      error: error.message
-    });
+    return { eventId: eventId, success: false, error: error.message }
   }
+}
 
-  return {
-    success: results.every(r => r.success),
-    results: results
-  };
+// Function to undo a user prompt
+async function undoPrompt(accessToken, undoStack) {
+  try {
+    const lastPrompt = undoStack.pop()
+
+    if(!lastPrompt){
+      return{ success: false, error: "Nothing to undo"}
+    }
+
+    // Loop through commands in the last prompt and call respective function w/data to undo each action
+    for (let i = lastPrompt.length - 1; i >= 0; i--) { // in reverse order to ensure commands follow original sequence 
+      await callFunction(accessToken, lastPrompt[i].name, lastPrompt[i].data)
+    }
+    return { success: true }
+  } catch (error) {
+    return { success: false, error: error.message }
+  }
 }
 
 module.exports = {

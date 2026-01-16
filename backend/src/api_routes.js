@@ -66,6 +66,9 @@ router.post("/api/openai", limiter, async (req, res) => {
   if (!req.session.conversationHistory) {
     req.session.conversationHistory = [];
   }
+  if (!req.session.undoStack) {
+    req.session.undoStack = []
+  }
   if (!req.session.tokens) {
     return res.status(401).json({ error: "Not authenticated" });
   }
@@ -129,19 +132,30 @@ router.post("/api/openai", limiter, async (req, res) => {
     const toolSelectionResult = toolSelectionCompletion.choices[0].message
     req.session.conversationHistory.push(toolSelectionResult); // add the assistant message that requested tool call into convo history
 
-    // If tools returned by the API call, collect them and call the appropriate function
+    // If tools returned by the API call, collect them and execute the appropriate function
     if (toolSelectionResult.tool_calls) {
+      const currentPromptUndos = []
       for (const toolCall of toolSelectionCompletion.choices[0].message.tool_calls) { // loop through and call the function associated w each tool
         const name = toolCall.function.name;
         calendarAction = name; // update calendarAction
         const args = JSON.parse(toolCall.function.arguments);
-        const result = await callFunction(access_token, name, args)
+
+        const result = await callFunction(access_token, name, args, req.session.undoStack)
         console.log(`Called function: ${name} with result: ${JSON.stringify(result.success)}`)
+
+        if (name != "undoPrompt") { // if it's an action, store the undo data
+          const undoAction = result.undoAction
+          currentPromptUndos.push(undoAction);
+        }
+
         req.session.conversationHistory.push({ // add results of this tool call into convo history
           role: "tool",
           tool_call_id: toolCall.id,
           content: JSON.stringify(result)
         })
+      }
+      if (currentPromptUndos.length > 0) {
+        req.session.undoStack.push(currentPromptUndos); // store group of undo data for the current prompt
       }
     }
 
