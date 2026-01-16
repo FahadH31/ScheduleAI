@@ -93,13 +93,14 @@ async function updateEvent(accessToken, eventData) {
   const calendar = google.calendar({ version: 'v3', auth });
 
   try {
-    const originalEventData = await calendar.events.get({ // get original event data for undo functionality
+    const originalEvent = await calendar.events.get({ // get original event data for undo functionality
       auth: auth,
       calendarId: "primary",
       eventId: eventId
     });
 
-    delete originalEventData.data.id // remove the id to avoid conflict when restoring the event
+    // Clean potentially conflicting fields (upon undo)
+    const { etag, updated, created, iCalUID, sequence, ...cleanedData } = originalEvent.data;
 
     const response = await calendar.events.patch({
       calendarId: 'primary',
@@ -107,7 +108,7 @@ async function updateEvent(accessToken, eventData) {
       resource: updatedEvent,
     });
 
-    const undoAction = { name: "updateEvent", data: { eventId: eventId, updatedEventData: originalEventData.data } }
+    const undoAction = { name: "updateEvent", data: { eventId: eventId, updatedEventData: cleanedData } }
 
     console.log(`Event with ID: ${eventId} updated successfully.`);
     return { success: true, data: response.data, undoAction: undoAction };
@@ -125,11 +126,14 @@ async function deleteEvent(accessToken, eventId) {
 
   try {
     // Get event details before deletion for undo functionality
-    const originalEventData = await calendar.events.get({
+    const originalEvent = await calendar.events.get({
       auth: auth,
       calendarId: "primary",
       eventId: eventId
     });
+
+    // Filter out potentially conflicting fields (upon undo)
+    const { id, etag, updated, created, iCalUID, sequence, ...cleanedData } = originalEvent.data;
 
     // Delete the event
     await calendar.events.delete({
@@ -137,7 +141,7 @@ async function deleteEvent(accessToken, eventId) {
       eventId: eventId,
     });
 
-    const undoAction = { name: "createEvent", data: originalEventData.data }
+    const undoAction = { name: "createEvent", data: cleanedData }
 
     console.log(`Event with ID ${eventId} deleted successfully.`);
     return { eventId: eventId, success: true, undoAction: undoAction }
@@ -152,15 +156,17 @@ async function undoPrompt(accessToken, undoStack) {
   try {
     const lastPrompt = undoStack.pop()
 
-    if(!lastPrompt){
-      return{ success: false, error: "Nothing to undo"}
+    if (!lastPrompt) {
+      return { success: false, error: "Nothing to undo" }
     }
 
+    const results = [];
     // Loop through commands in the last prompt and call respective function w/data to undo each action
     for (let i = lastPrompt.length - 1; i >= 0; i--) { // in reverse order to ensure commands follow original sequence 
-      await callFunction(accessToken, lastPrompt[i].name, lastPrompt[i].data)
+      const result = await callFunction(accessToken, lastPrompt[i].name, lastPrompt[i].data)
+      results.push(result.success)
     }
-    return { success: true }
+    return { success: results.every(res => res === true) };
   } catch (error) {
     return { success: false, error: error.message }
   }

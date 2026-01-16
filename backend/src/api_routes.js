@@ -91,8 +91,13 @@ router.post("/api/openai", limiter, async (req, res) => {
   req.session.conversationHistory.push({ role: "user", content: prompt }); // Add the user input to the conversation history
 
   // Limit length of the conversation history
-  if (req.session.conversationHistory.length > CONVERSATION_HISTORY_LENGTH) {
-    req.session.conversationHistory.shift(); // remove the oldest message
+  const history = req.session.conversationHistory
+  while(history.length > CONVERSATION_HISTORY_LENGTH){ // prune to maximum convo history length
+    req.session.conversationHistory.shift()
+  }
+  while (history.length > 0 && 
+    (history[0].role === 'tool' || (history[0].role === 'assistant' && history[0].tool_calls))) { // ensure no stray tool calls or assistant messages are left in the convo history
+    history.shift();
   }
 
   // Get the current date/time/timezone.
@@ -121,6 +126,7 @@ router.post("/api/openai", limiter, async (req, res) => {
           - The current date/time is ${currentDate}.
           - The user's timezone is ${timeZone}
           - Information on the user's upcoming schedule: ${upcomingEvents}. Use this to obtain the event ID for 'updateEvent' tool calls. 
+          Note: Event IDs may change after an 'undo' action. Always use the IDs provided in the 'upcomingEvents' list or the latest tool response for the current turn; never reuse IDs from earlier in the conversation history."
           `
         },
         ...req.session.conversationHistory
@@ -151,7 +157,7 @@ router.post("/api/openai", limiter, async (req, res) => {
         req.session.conversationHistory.push({ // add results of this tool call into convo history
           role: "tool",
           tool_call_id: toolCall.id,
-          content: JSON.stringify(result)
+          content: JSON.stringify(result.success)
         })
       }
       if (currentPromptUndos.length > 0) {
