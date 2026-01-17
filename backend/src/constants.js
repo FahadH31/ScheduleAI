@@ -1,5 +1,8 @@
-// Conversation length stored and passed in OpenAI calls
+// Conversation length stored and passed in OpenAI calls (including system and tool messages)
 CONVERSATION_HISTORY_LENGTH = 30
+
+// Number of existing upcoming events the AI can see (for update/delete functionality) 
+VISIBLE_UPCOMING_EVENTS = 20
 
 // Schemas for OpenAI tools
 TOOLS = [
@@ -257,7 +260,7 @@ TOOLS = [
         "type": "function",
         "function":{
             "name": "undoPrompt",
-            "description": "Function to undo the commands executed as a result of a user prompt."
+            "description": "Reverses the ENTIRE previous user turn (all commands in the previous turn). Only call this tool once to undo the most recent user message."
         }
     }
 ]

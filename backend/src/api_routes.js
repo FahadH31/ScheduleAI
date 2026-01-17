@@ -92,10 +92,10 @@ router.post("/api/openai", limiter, async (req, res) => {
 
   // Limit length of the conversation history
   const history = req.session.conversationHistory
-  while(history.length > CONVERSATION_HISTORY_LENGTH){ // prune to maximum convo history length
+  while (history.length > CONVERSATION_HISTORY_LENGTH) { // prune to maximum convo history length
     req.session.conversationHistory.shift()
   }
-  while (history.length > 0 && 
+  while (history.length > 0 &&
     (history[0].role === 'tool' || (history[0].role === 'assistant' && history[0].tool_calls))) { // ensure no stray tool calls or assistant messages are left in the convo history
     history.shift();
   }
@@ -125,8 +125,11 @@ router.post("/api/openai", limiter, async (req, res) => {
           If no tool is needed, respond with text that states so. Following is data you can use to guide your tool calls: 
           - The current date/time is ${currentDate}.
           - The user's timezone is ${timeZone}
-          - Information on the user's upcoming schedule: ${upcomingEvents}. Use this to obtain the event ID for 'updateEvent' tool calls. 
-          Note: Event IDs may change after an 'undo' action. Always use the IDs provided in the 'upcomingEvents' list or the latest tool response for the current turn; never reuse IDs from earlier in the conversation history."
+          - Information on the user's upcoming schedule: ${upcomingEvents}. ONLY use this data to obtain the event ID for 'updateEvent' or 'deleteEvent' tool calls. 
+          Notes: 
+          - Event IDs may change after an 'undo' action. Always use the most recent IDs provided in the 'upcomingEvents' list or the latest tool response for the current turn; never reuse IDs from earlier in the conversation history."
+          - Never use 'updateEvent' for NEW scheduling requests. It should only be used when the user explicitly asks to modify an existing event.
+          - Never call "undoPrompt" more than once per user prompt/turn.
           `
         },
         ...req.session.conversationHistory
@@ -143,11 +146,11 @@ router.post("/api/openai", limiter, async (req, res) => {
       const currentPromptUndos = []
       for (const toolCall of toolSelectionCompletion.choices[0].message.tool_calls) { // loop through and call the function associated w each tool
         const name = toolCall.function.name;
+        console.log(`Tool Call: ${name}`)
         calendarAction = name; // update calendarAction
         const args = JSON.parse(toolCall.function.arguments);
 
         const result = await callFunction(access_token, name, args, req.session.undoStack)
-        console.log(`Called function: ${name} with result: ${JSON.stringify(result.success)}`)
 
         if (name != "undoPrompt") { // if it's an action, store the undo data
           const undoAction = result.undoAction
@@ -157,7 +160,7 @@ router.post("/api/openai", limiter, async (req, res) => {
         req.session.conversationHistory.push({ // add results of this tool call into convo history
           role: "tool",
           tool_call_id: toolCall.id,
-          content: JSON.stringify(result.success)
+          content: JSON.stringify({ success: result.success, message: result.resultMessage })
         })
       }
       if (currentPromptUndos.length > 0) {

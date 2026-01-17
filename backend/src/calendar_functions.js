@@ -1,4 +1,5 @@
 const { google } = require('googleapis');
+const { VISIBLE_UPCOMING_EVENTS } = require('./constants');
 
 // Function router
 async function callFunction(accessToken, name, args, undoStack) {
@@ -26,7 +27,7 @@ async function getUpcomingEvents(accessToken) {
     const response = await calendar.events.list({
       calendarId: 'primary',
       timeMin: new Date().toISOString(),
-      maxResults: 20,
+      maxResults: VISIBLE_UPCOMING_EVENTS,
       singleEvents: true,
       orderBy: 'startTime',
     });
@@ -43,8 +44,6 @@ async function getUpcomingEvents(accessToken) {
       id: event.id,
       summary: event.summary,
       startTime: event.start,
-      endTime: event.end,
-      location: event.location,
       colorID: event.colorId,
       description: event.description,
     }));
@@ -58,8 +57,6 @@ async function getUpcomingEvents(accessToken) {
 
 // Function to create an event for the user's Google Calendar
 async function createEvent(accessToken, eventData) {
-  console.log(eventData);
-
   // Insert the data 
   try {
     const auth = new google.auth.OAuth2();
@@ -74,8 +71,10 @@ async function createEvent(accessToken, eventData) {
 
     const undoAction = { name: "deleteEvent", data: { eventId: response.data.id } }
 
-    console.log("Event created successfully");
-    return { success: true, link: response.data.htmlLink, undoAction: undoAction };
+    const resultMessage = `Event "${response.data.summary}" created successfully.`
+    console.log(resultMessage + "\n");
+
+    return { success: true, link: response.data.htmlLink, undoAction: undoAction, resultMessage: resultMessage };
 
   } catch (error) {
     console.error("Error creating event:", error);
@@ -110,8 +109,10 @@ async function updateEvent(accessToken, eventData) {
 
     const undoAction = { name: "updateEvent", data: { eventId: eventId, updatedEventData: cleanedData } }
 
-    console.log(`Event with ID: ${eventId} updated successfully.`);
-    return { success: true, data: response.data, undoAction: undoAction };
+    const resultMessage = `Event "${cleanedData.summary}" updated successfully.`
+    console.log(resultMessage + "\n");
+
+    return { success: true, data: response.data, undoAction: undoAction, resultMessage: resultMessage };
   } catch (error) {
     console.error('Error updating event:', error);
     return { success: false, error: error.message };
@@ -134,6 +135,7 @@ async function deleteEvent(accessToken, eventId) {
 
     // Filter out potentially conflicting fields (upon undo)
     const { id, etag, updated, created, iCalUID, sequence, ...cleanedData } = originalEvent.data;
+    const eventName = cleanedData.summary
 
     // Delete the event
     await calendar.events.delete({
@@ -143,10 +145,12 @@ async function deleteEvent(accessToken, eventId) {
 
     const undoAction = { name: "createEvent", data: cleanedData }
 
-    console.log(`Event with ID ${eventId} deleted successfully.`);
-    return { eventId: eventId, success: true, undoAction: undoAction }
+    const resultMessage = `Event "${eventName}" deleted successfully.`
+    console.log(resultMessage + "\n");
+
+    return { eventId: eventId, success: true, undoAction: undoAction, resultMessage: resultMessage }
   } catch (error) {
-    console.error(`Error deleting event ${eventId}:`, error);
+    console.error(`Error deleting event: `, error);
     return { eventId: eventId, success: false, error: error.message }
   }
 }
@@ -166,6 +170,7 @@ async function undoPrompt(accessToken, undoStack) {
       const result = await callFunction(accessToken, lastPrompt[i].name, lastPrompt[i].data)
       results.push(result.success)
     }
+
     return { success: results.every(res => res === true) };
   } catch (error) {
     return { success: false, error: error.message }
