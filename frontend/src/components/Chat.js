@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { getOpenAIResponse } from "./OpenAICall";
+import Logo from "../assets/logo.png"
 import MicIcon from "../assets/icons/mic.svg"
 import SendIcon from "../assets/icons/send.svg"
 import StopIcon from "../assets/icons/stop-square.png"
@@ -76,21 +77,21 @@ const Chat = () => {
     };
 
     const handleLogout = async () => {
-    try {
-        await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/logout`, {
-            method: 'POST',
-            credentials: 'include'
-        });
-        
-        // Clear any remaining sessionStorage
-        sessionStorage.clear();
-        
-        // Redirect
-        window.location.href = '/';
-    } catch (error) {
-        console.error("Logout error:", error);
+        try {
+            await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/logout`, {
+                method: 'POST',
+                credentials: 'include'
+            });
+
+            // Clear any remaining sessionStorage
+            sessionStorage.clear();
+
+            // Redirect
+            window.location.href = '/';
+        } catch (error) {
+            console.error("Logout error:", error);
+        }
     }
-}
 
     const toggleListening = () => {
         if (isListening) {
@@ -117,8 +118,11 @@ const Chat = () => {
             >
                 <img src={LogoutIcon} alt="Logout Icon" className="size-5" title="Log-out"></img>
             </button>
-            <div className="flex items-center mt-8">
-                <h1 className="hidden sm:flow-root sm:text-3xl font-semibold text-center flex-grow">ScheduleAI</h1>
+            <div className="flex justify-center items-center mt-4">
+                <img src={Logo} alt="ScheduleAI Logo" class='w-[2.75vw] 2xl:w-[1.5vw] mr-1'></img>
+                <h1 className="hidden sm:flow-root sm:text-3xl font-semibold ml-1">
+                    ScheduleAI
+                </h1>
             </div>
             {/* Clear Chat Button */}
             <button
