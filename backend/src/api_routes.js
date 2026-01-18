@@ -21,6 +21,13 @@ const limiter = ratelimit({
   ipv6Subnet: 56,
 })
 
+// Clear chat route
+router.post("/clear-chat-history", (req, res) => {
+  req.session.conversationHistory = [];
+  res.json({ success: true });
+})
+
+
 // Authentication Check Route
 router.get("/api/check-auth", (req, res) => {
   if (req.session && req.session.tokens) {
@@ -30,14 +37,12 @@ router.get("/api/check-auth", (req, res) => {
   }
 });
 
-
 // Logout Route
 router.post("/api/logout", (req, res) => {
   req.session.destroy();
   res.clearCookie('connect.sid');
   res.json({ success: true });
 });
-
 
 // Google Authentication Route
 router.post("/api/google-auth", async (req, res) => {

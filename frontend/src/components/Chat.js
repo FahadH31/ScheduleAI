@@ -71,9 +71,19 @@ const Chat = () => {
         }
     };
 
-    const handleClearChat = () => {
+    const handleClearChat = async () => {
+        // Clear in frontend
         setResponses([]); // Clear chat history from state
         sessionStorage.removeItem("chatHistory"); // Clear chat history from session storage
+        try {
+            await fetch(`${process.env.REACT_APP_BACKEND_URL}/clear-chat-history`,{
+                method: 'POST',
+                credentials: 'include'
+            });
+        }
+        catch (error) {
+            console.error("Clear chat error:", error);
+        }
     };
 
     const handleLogout = async () => {
