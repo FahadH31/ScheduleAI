@@ -1,8 +1,8 @@
 // Conversation length stored and passed in OpenAI calls (including system and tool messages)
-CONVERSATION_HISTORY_LENGTH = 30
+CONVERSATION_HISTORY_LENGTH = 20
 
 // Number of existing upcoming events the AI can see (for update/delete functionality) 
-VISIBLE_UPCOMING_EVENTS = 20
+VISIBLE_UPCOMING_EVENTS = 30
 
 // Schemas for OpenAI tools
 TOOLS = [

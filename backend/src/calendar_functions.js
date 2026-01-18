@@ -23,10 +23,18 @@ async function getUpcomingEvents(accessToken) {
   auth.setCredentials({ access_token: accessToken });
   const calendar = google.calendar({ version: 'v3', auth });
 
+  // Get the current date, time set to midnight 
+  // (this is so the AI can view all events on the current day, including ones already passed)
+  const date = new Date()
+  date.setHours(0)
+  date.setMinutes(0)
+  date.setSeconds(0)
+  date.setMilliseconds(0)
+
   try {
     const response = await calendar.events.list({
       calendarId: 'primary',
-      timeMin: new Date().toISOString(),
+      timeMin: date.toISOString(),
       maxResults: VISIBLE_UPCOMING_EVENTS,
       singleEvents: true,
       orderBy: 'startTime',
