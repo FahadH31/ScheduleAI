@@ -86,7 +86,7 @@ async function createEvent(accessToken, eventData) {
 
   } catch (error) {
     console.error("Error creating event:", error);
-    throw new Error("Failed to create Google Calendar event");
+    return { success: false, error: error.message };
   }
 }
 
