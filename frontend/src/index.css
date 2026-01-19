@@ -4,15 +4,29 @@
 
 .custom-scrollbar {
   scrollbar-width: none;
-  -ms-overflow-style: none; 
+  -ms-overflow-style: none;
   overflow-x: hidden;
 }
 
 .custom-scrollbar::-webkit-scrollbar {
-  width: 0; 
+  width: 0;
   height: 0;
 }
 
 .custom-scrollbar::-webkit-scrollbar {
-  display: none; 
+  display: none;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.2s ease-out forwards;
 }
