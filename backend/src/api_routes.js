@@ -3,7 +3,7 @@ const ratelimit = require('express-rate-limit')
 const axios = require('axios');
 const date = require('date-and-time');
 const { openaiClient, oAuth2Client } = require('./authentication');
-const { callFunction, getUpcomingEvents } = require('./calendar_functions');
+const { callFunction, getCalendarEvents } = require('./calendar_functions');
 const { CONVERSATION_HISTORY_LENGTH, TOOLS } = require('./constants');
 
 const router = express.Router();
@@ -24,6 +24,7 @@ const limiter = ratelimit({
 // Clear chat route
 router.post("/clear-chat-history", (req, res) => {
   req.session.conversationHistory = [];
+  console.log("Conversation history cleared.")
   res.json({ success: true });
 })
 
@@ -31,6 +32,7 @@ router.post("/clear-chat-history", (req, res) => {
 // Authentication Check Route
 router.get("/api/check-auth", (req, res) => {
   if (req.session && req.session.tokens) {
+    console.log("User authenticated.")
     res.status(200).json({ authenticated: true });
   } else {
     res.status(401).json({ authenticated: false });
@@ -41,6 +43,7 @@ router.get("/api/check-auth", (req, res) => {
 router.post("/api/logout", (req, res) => {
   req.session.destroy();
   res.clearCookie('connect.sid');
+  console.log("User successfully logged out.")
   res.json({ success: true });
 });
 
@@ -111,7 +114,7 @@ router.post("/api/openai", limiter, async (req, res) => {
   var timeZone = req.header("User-TimeZone");
 
   // Store upcoming events to provide in OpenAI call.
-  var upcomingEvents = await getUpcomingEvents(access_token);
+  var upcomingEvents = await getCalendarEvents(access_token);
   upcomingEvents = JSON.stringify(upcomingEvents);
 
   try {

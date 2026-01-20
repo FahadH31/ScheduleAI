@@ -18,7 +18,7 @@ async function callFunction(accessToken, name, args, undoStack) {
 }
 
 // Function to get the user's upcoming events
-async function getUpcomingEvents(accessToken) {
+async function getCalendarEvents(accessToken) {
   const auth = new google.auth.OAuth2();
   auth.setCredentials({ access_token: accessToken });
   const calendar = google.calendar({ version: 'v3', auth });
@@ -83,7 +83,7 @@ async function createEvent(accessToken, eventData) {
     const undoAction = { name: "deleteEvent", data: { eventId: response.data.id } }
 
     const resultMessage = `Event "${response.data.summary}" created successfully.`
-    console.log(resultMessage + "\n");
+    console.log(resultMessage);
 
     return { success: true, link: response.data.htmlLink, undoAction: undoAction, resultMessage: resultMessage };
 
@@ -121,7 +121,7 @@ async function updateEvent(accessToken, eventData) {
     const undoAction = { name: "updateEvent", data: { eventId: eventId, updatedEventData: cleanedData } }
 
     const resultMessage = `Event "${cleanedData.summary}" updated successfully.`
-    console.log(resultMessage + "\n");
+    console.log(resultMessage);
 
     return { success: true, data: response.data, undoAction: undoAction, resultMessage: resultMessage };
   } catch (error) {
@@ -157,7 +157,7 @@ async function deleteEvent(accessToken, eventId) {
     const undoAction = { name: "createEvent", data: cleanedData }
 
     const resultMessage = `Event "${eventName}" deleted successfully.`
-    console.log(resultMessage + "\n");
+    console.log(resultMessage);
 
     return { eventId: eventId, success: true, undoAction: undoAction, resultMessage: resultMessage }
   } catch (error) {
@@ -190,5 +190,5 @@ async function undoPrompt(accessToken, undoStack) {
 
 module.exports = {
   callFunction,
-  getUpcomingEvents
+  getCalendarEvents
 };
