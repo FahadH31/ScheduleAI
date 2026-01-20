@@ -115,12 +115,12 @@ const Chat = () => {
             {/* Help Modal */}
             {isModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 transition-opacity animate-fadeIn">
-                    <div className="bg-gray-900 border border-gray-700/50 rounded-2xl shadow-2xl max-w-lg w-full p-8 text-white relative overflow-hidden">
+                    <div className="bg-gray-900 border border-gray-700/50 rounded-2xl shadow-2xl max-w-lg w-full p-8 text-white relative max-h-[90vh] overflow-y-auto custom-scrollbar">
                         <div className="relative z-10">
                             <div className="space-y-6">
-                                <div className="bg-gray-700/30 rounded-xl p-5 border border-gray-600/30">
+                                <div className="bg-gray-700/30 rounded-xl p-5 border border-gray-600/30 ">
                                     <div className="flex items-center gap-2 mb-1">
-                                        <h3 className="text-lg font-semibold">How to Use</h3>
+                                        <h3 className="text-lg font-semibold">Usage</h3>
                                     </div>
                                     <p className="text-sm text-gray-300 mb-3">
                                         I can manage your Google Calendar using natural language. I can handle event details such as color, location, recurrence, reminders, and more. Try commands like:
@@ -154,15 +154,19 @@ const Chat = () => {
                                     <ul className="space-y-3">
                                         <li className="text-sm text-gray-300">
                                             <span className="font-medium text-white">Event Visibility:</span>
-                                            <span className="text-gray-400 block mt-1">I can see up to 30 of your closest upcoming events to assist with updates and deletions.</span>
+                                            <span className="text-gray-400 block mt-1">I can see up to 30 of your closest upcoming events to assist with updates and deletions. I am unable to view, modify, or delete events that occurred more than a week ago.</span>
                                         </li>
                                         <li className="text-sm text-gray-300">
                                             <span className="font-medium text-white">Context Memory:</span>
-                                            <span className="text-gray-400 block mt-1">I remember about 10 of your messages in our conversation history before I start pruning older messages.</span>
+                                            <span className="text-gray-400 block mt-1">I remember about 10 of your prompts in our conversation history before I start pruning older messages.</span>
                                         </li>
                                         <li className="text-sm text-gray-300">
-                                            <span className="font-medium text-white">Historical Data:</span>
-                                            <span className="text-gray-400 block mt-1">I am unable to view, modify, or delete events that occurred in the past.</span>
+                                            <span className="font-medium text-white">Primary Calendar:</span>
+                                            <span className="text-gray-400 block mt-1">I currently only support the primary calendar associated with your Google account.</span>
+                                        </li>
+                                        <li className="text-sm text-gray-300">
+                                            <span className="font-medium text-white">Tasks:</span>
+                                            <span className="text-gray-400 block mt-1">I currently only support Google Calendar's 'Events' feature, not 'Tasks'.</span>
                                         </li>
                                     </ul>
                                 </div>
@@ -170,7 +174,7 @@ const Chat = () => {
 
                             <button
                                 onClick={() => setIsModalOpen(false)}
-                                className="mt-6 w-full bg-[#065AD8] text-white font-semibold py-3 px-4 rounded-xl transition-all"
+                                className="mt-6 w-full bg-[#065AD8] text-white font-semibold py-3 px-4 rounded-xl transition-all hover:bg-blue-700"
                             >
                                 Got it!
                             </button>
@@ -243,7 +247,7 @@ const Chat = () => {
                             </div>
                         ))
                     ) : (
-                        <p className="text-gray-400 mt-4 text-center">Start a conversation to manage your schedule!</p>
+                        <p></p>
                     )}
                 </div>
                 <div ref={messagesEndRef} />

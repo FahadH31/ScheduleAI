@@ -135,6 +135,7 @@ router.post("/api/openai", limiter, async (req, res) => {
           - Event IDs may change after an 'undo' action. Always use the most recent IDs provided in the 'upcomingEvents' list or the latest tool response for the current turn; never reuse IDs from earlier in the conversation history."
           - Never use 'updateEvent' for NEW scheduling requests. It should only be used when the user explicitly asks to modify an existing event.
           - Never call "undoPrompt" more than once per user prompt/turn.
+          - You are incapable of updating/deleting events that are more than 7 days (a week) old. Respond with text stating this if the user tries to perform this. 
           `
         },
         ...req.session.conversationHistory

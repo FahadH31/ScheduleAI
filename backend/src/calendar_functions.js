@@ -23,13 +23,16 @@ async function getUpcomingEvents(accessToken) {
   auth.setCredentials({ access_token: accessToken });
   const calendar = google.calendar({ version: 'v3', auth });
 
-  // Get the current date, time set to midnight 
-  // (this is so the AI can view all events on the current day, including ones already passed)
+  // Get the date one week ago, time set to midnight 
+  // (this is so the AI can view all events from the past week and onwards)
   const date = new Date()
   date.setHours(0)
   date.setMinutes(0)
   date.setSeconds(0)
   date.setMilliseconds(0)
+
+  const currentDate = date.getDate()
+  date.setDate(currentDate-7) // set date to last week
 
   try {
     const response = await calendar.events.list({
