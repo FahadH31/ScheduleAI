@@ -1,4 +1,3 @@
-import React from "react";
 import GoogleCalendarIFrame from "../components/GoogleCalendarIFrame";
 import Chat from "../components/Chat";
 

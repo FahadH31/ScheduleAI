@@ -1,4 +1,3 @@
-import React from "react";
 import { Link } from "react-router-dom";
 import GoogleLoginButton from "../components/GoogleLoginButton";
 import { GoogleOAuthProvider } from "@react-oauth/google";
