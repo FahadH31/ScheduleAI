@@ -31,9 +31,9 @@ router.post("/clear-chat-history", (req, res) => {
 
 // Authentication Check Route
 router.get("/api/check-auth", (req, res) => {
-  if (req.session && req.session.tokens) {
+  if (req.session && req.session.tokens && req.session.email) {
     console.log("User authenticated.")
-    res.status(200).json({ authenticated: true });
+    res.status(200).json({ authenticated: true, email: req.session.email });
   } else {
     res.status(401).json({ authenticated: false });
   }
@@ -63,6 +63,7 @@ router.post("/api/google-auth", async (req, res) => {
     }
   );
   const email = userInfoResponse.data.email;
+  req.session.email = email;
 
   res.status(200).json({ success: true, email: email });
 });

@@ -14,6 +14,8 @@ const PrivateRoute = () => {
 
                 if (res.ok) {
                     setIsAuthenticated(true);
+                    const data = await res.json();
+                    sessionStorage.setItem("email", data.email); // set email address for iframe
                 } else {
                     setIsAuthenticated(false);
                 }
@@ -28,6 +30,9 @@ const PrivateRoute = () => {
 
     if (isAuthenticated === null) {
         return <div>Loading...</div>;
+    }
+    if(!sessionStorage.getItem("email")){
+        window.location.reload()
     }
 
     return isAuthenticated ? <Outlet /> : <Navigate to="/" />;
