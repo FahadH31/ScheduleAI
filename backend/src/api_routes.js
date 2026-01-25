@@ -2,7 +2,7 @@ const express = require('express');
 const ratelimit = require('express-rate-limit')
 const axios = require('axios');
 const date = require('date-and-time');
-const { openaiClient, oAuth2Client } = require('./authentication');
+const { openaiClient, oAuthInitializer } = require('./authentication');
 const { callFunction, getCalendarEvents } = require('./calendar_functions');
 const { CONVERSATION_HISTORY_LENGTH, TOOLS } = require('./constants');
 
@@ -49,8 +49,9 @@ router.post("/api/logout", (req, res) => {
 
 // Google Authentication Route
 router.post("/api/google-auth", async (req, res) => {
-  const { tokens } = await oAuth2Client.getToken(req.body.tokenResponse); // Exchange auth code for tokens  
-  oAuth2Client.setCredentials(tokens);
+  const auth = oAuthInitializer();
+  const { tokens } = await auth.getToken(req.body.tokenResponse); // Exchange auth code for tokens  
+  auth.setCredentials(tokens);
   req.session.tokens = tokens; // stores token object in server-side session
 
   // get user email

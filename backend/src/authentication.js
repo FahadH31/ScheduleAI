@@ -8,13 +8,17 @@ const openaiClient = new OpenAI({
 });
 
 // Initialize Google Auth Client
-const oAuth2Client = new OAuth2Client(
-  process.env.GOOGLE_CLIENT_ID,
-  process.env.GOOGLE_CLIENT_SECRET,
-  'postmessage',
-);
+const oAuthInitializer = () => {
+  const oAuth2Client = new OAuth2Client(
+    process.env.GOOGLE_CLIENT_ID,
+    process.env.GOOGLE_CLIENT_SECRET,
+    'postmessage',
+  );
+
+  return oAuth2Client;
+}
 
 module.exports = {
   openaiClient,
-  oAuth2Client,
+  oAuthInitializer,
 };
