@@ -10,26 +10,17 @@ const About = () => {
                     <img src={Logo} alt="Logo" className="w-10 h-10 mr-3" />
                     <h1 className="text-3xl font-bold text-gray-900">About ScheduleAI</h1>
                 </div>
-                
+
                 <div className="text-left max-w-full">
                     <p className="mb-6 text-gray-700">
-                        ScheduleAI is an intelligent companion for calendar management, designed to bridge the gap between natural conversation and organized scheduling. 
+                        ScheduleAI is an intelligent companion for calendar management, designed to bridge the gap between natural conversation and organized scheduling.
                         By connecting your Google Calendar, our AI assistant interprets your intents to help you manage your time efficiently.
                     </p>
 
-                    <h2 className="text-xl font-bold mb-2 text-gray-800">Privacy Policy</h2>
-                    <p className="mb-6 text-gray-700">
-                        We access your Google email and Calendar data solely to perform scheduling tasks as requested. 
-                        Your data is processed via OpenAI to interpret commands and is stored temporarily in secure sessions. 
-                        We adhere to the Google API Services User Data Policy, including Limited Use requirements.
-                    </p>
-
-                    <h2 className="text-xl font-bold mb-2 text-gray-800">Terms of Service</h2>
-                    <p className="mb-6 text-gray-700">
-                        This is a student project provided "as-is." While we strive for accuracy, please verify important events manually. 
-                        By using ScheduleAI, you agree to these terms and take responsibility for your calendar modifications.
-                    </p>
-
+                    <div className="flex flex-col space-y-2 mb-4">
+                        <Link to="/privacy" className="text-blue-600 hover:underline text-sm">Privacy Policy</Link>
+                        <Link to="/terms" className="text-blue-600 hover:underline text-sm">Terms of Service</Link>
+                    </div>
                     <Link to="/" className="text-blue-600 font-semibold hover:underline">
                         &larr; Back to Login
                     </Link>
