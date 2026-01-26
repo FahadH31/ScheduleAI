@@ -1,9 +1,11 @@
 import { useState, useEffect, useRef } from "react";
 import { getOpenAIResponse } from "./OpenAICall";
+import { Link } from "react-router-dom";
 import Logo from "../assets/logo.png"
 import MicIcon from "../assets/icons/mic.svg"
 import SendIcon from "../assets/icons/send.svg"
 import StopIcon from "../assets/icons/stop-square.png"
+import SettingsIcon from "../assets/icons/settings.svg"
 import LogoutIcon from "../assets/icons/log-out.svg"
 import ReactMarkdown from "react-markdown";
 import useSpeechToText from "../hooks/useSpeechToText";
@@ -183,14 +185,26 @@ const Chat = () => {
                 </div>
             )}
 
-            {/* Logout Button */}
-            <button
-                type="button"
-                onClick={handleLogout}
-                className="fixed right-4 top-4 transition-all hover:opacity-50"
-            >
-                <img src={LogoutIcon} alt="Logout Icon" className="size-5" title="Log-out"></img>
-            </button>
+            <div className="flex flex-row">
+                {/* Settings Button */}
+                <Link
+                    to="/settings"
+                    className="ml-0 mr-auto transition-opacity hover:opacity-50"
+                    title="Settings"
+                >
+                    <img src={SettingsIcon} className="size-5" alt="Settings icon"></img>
+                </Link>
+
+
+                {/* Logout Button */}
+                <button
+                    type="button"
+                    onClick={handleLogout}
+                    className="mr-0 ml-auto transition-all hover:opacity-50"
+                >
+                    <img src={LogoutIcon} alt="Logout Icon" className="size-5" title="Log-out"></img>
+                </button>
+            </div>
 
             <div className="flex justify-center items-center mt-4">
                 <img src={Logo} alt="ScheduleAI Logo" className='w-[2.75vw] 2xl:w-[1.5vw] mr-1'></img>

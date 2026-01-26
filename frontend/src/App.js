@@ -5,6 +5,7 @@ import Main from './pages/Main';
 import About from './pages/About';
 import Privacy from './pages/Privacy'
 import Terms from './pages/Terms'
+import Settings from './pages/Settings'
 
 export default function App() {
   return (
@@ -14,8 +15,9 @@ export default function App() {
         <Route path="/about" element={<About />} />
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/terms" element={<Terms />} />
-        <Route element = {<PrivateRoute/>}>
+        <Route element={<PrivateRoute />}>
           <Route path="/dashboard" element={<Main />} />
+          <Route path="/settings" element={<Settings />} />
         </Route>
       </Routes>
     </Router>
