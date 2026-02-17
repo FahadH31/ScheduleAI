@@ -1,2 +1,2 @@
 A web-based, AI-assisted, Google Calendar manager that schedules, updates, and optimizes events for users based on natural language interaction. 
-Built with React.js, Express.js, OpenAI API, and Google APIs. Deployment coming soon!
+Built with the MERN stack, OpenAI API, and Google APIs. Deployment coming soon!
