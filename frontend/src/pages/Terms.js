@@ -4,8 +4,8 @@ const Terms = () => {
     return (
         <div className="min-h-screen bg-white p-10 sm:p-20 animate-fadeIn">
             <div className="max-w-4xl mx-auto text-left">
-                <h1 className="text-3xl font-bold text-gray-900 mb-8">Terms of Service</h1>
-                <p className="text-sm text-gray-500 mb-8 font-medium">Last Updated: January 25, 2026</p>
+                <h1 className="text-3xl font-bold text-gray-900 mb-2">Terms of Service</h1>
+                <p className="text-sm text-gray-500 mb-6 font-medium">Last Updated: January 25, 2026</p>
 
                 <section className="mb-8">
                     <h2 className="text-xl font-bold mb-3 text-gray-800">1. Acceptance of Terms</h2>
