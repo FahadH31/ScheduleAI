@@ -17,7 +17,7 @@ function GoogleCalendarIFrame() {
     )
 
     return (
-        <div className="relative overflow-hidden w-full h-[full] border border-gray-200 rounded-lg">
+        <div className="relative overflow-hidden w-full h-[full] border border-gray-200 rounded-lg z-10">
             <iframe
                 title="Calendar"
                 src={`https://calendar.google.com/calendar/embed?src=${email_address}&showPrint=0&showCalendars=0&showTabs=0&ctz=${user_timezone}`}
@@ -25,12 +25,12 @@ function GoogleCalendarIFrame() {
                 id="calendarIFrame"
             ></iframe>
             <div 
-                className="absolute bottom-0 left-0 w-[200px] h-[26px] bg-[#F0F4F9] z-10"
+                className="absolute bottom-0 left-0 w-[200px] h-[26px] bg-[#F0F4F9]"
                 aria-hidden="true"
             ></div>
 
             <div
-                className="absolute top-0 right-0 w-[40px] h-[40px] bg-[#F0F4F9] z-10"
+                className="absolute top-0 right-0 w-[50px] h-[50px] bg-[#F0F4F9]"
                 aria-hidden="true"
             ></div>
         </div>

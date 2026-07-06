@@ -113,14 +113,14 @@ const Chat = () => {
     };
 
     return (
-        <div className="flex flex-col p-3 sm:w-1/2 sm:p-6 animate-fadeIn">
+        <div className="flex flex-col p-3 sm:w-1/2 sm:p-6 animate-fadeIn z-20">
             {/* Help Modal */}
             {isModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 transition-opacity animate-fadeIn">
-                    <div className="bg-gray-900 border border-gray-700/50 rounded-2xl shadow-2xl max-w-lg w-full p-8 text-white relative max-h-[90vh] overflow-y-auto custom-scrollbar">
-                        <div className="relative z-10">
+                    <div className="bg-gray-900 border border-gray-700/50 rounded-2xl shadow-2xl max-w-2xl w-full p-8 text-white relative max-h-[90vh] overflow-y-auto custom-scrollbar">
+                        <div className="relative z-20">
                             <div className="space-y-6">
-                                <div className="bg-gray-700/30 rounded-xl p-5 border border-gray-600/30 ">
+                                <div className="bg-gray-700/30 rounded-lg p-5 border border-gray-600/30 ">
                                     <div className="flex items-center gap-2 mb-1">
                                         <h3 className="text-lg font-semibold">Usage</h3>
                                     </div>
