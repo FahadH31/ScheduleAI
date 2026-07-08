@@ -1,26 +1,37 @@
-function GoogleCalendarIFrame() {
+import { useEffect } from 'react';
+
+function GoogleCalendarIFrame(props) {
     const email_address = sessionStorage.getItem("email");
-    const user_timezone = Intl.DateTimeFormat().resolvedOptions().timeZone
+    const view_mode = props.viewMode;
+    const user_timezone = props.timeZone;
 
     // Listener to reload iframe 
-    window.addEventListener("message",
-        function (e) {
+    useEffect(() => {
+        const handleMessage = (e) => {
             if (e.origin !== window.location.origin) {
                 return;
             }
 
             if (e.data === "reload") {
-                document.getElementById("calendarIFrame").src += '';
+                const iframe = document.getElementById("calendarIFrame");
+                if (iframe) {
+                    iframe.src += '';
+                }
             }
-        }
+        };
 
-    )
+        window.addEventListener("message", handleMessage);
+        
+        return () => {
+            window.removeEventListener("message", handleMessage);
+        };
+    }, []);
 
     return (
         <div className="relative overflow-hidden w-full h-[full] border border-gray-200 rounded-lg z-10">
             <iframe
                 title="Calendar"
-                src={`https://calendar.google.com/calendar/embed?src=${email_address}&showPrint=0&showCalendars=0&showTabs=0&ctz=${user_timezone}`}
+                src={`https://calendar.google.com/calendar/embed?src=${email_address}&showPrint=0&showCalendars=0&showTabs=0&ctz=${user_timezone}&mode=${view_mode}`}
                 className="w-full h-full border-none"
                 id="calendarIFrame"
             ></iframe>

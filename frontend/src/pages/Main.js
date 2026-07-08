@@ -5,8 +5,11 @@ import Settings from "../components/Settings"
 
 function Main() {
   const [activeTab, setActiveTab] = useState('chat')
+  // Calendar iframe variables
+  const [viewMode, setViewMode] = useState(() => localStorage.getItem("viewMode") || "MONTH")
+  const [timeZone, setTimeZone] = useState(() => localStorage.getItem("timeZone") || Intl.DateTimeFormat().resolvedOptions().timeZone)
 
-  const setView = () => {
+  const changeTab = () => {
     if (activeTab === 'chat') {
       setActiveTab('settings');
     } else {
@@ -16,8 +19,18 @@ function Main() {
 
   return (
     <div className="flex w-full h-screen bg-gray-900 text-white flex-col sm:flex-row">
-      <GoogleCalendarIFrame />
-      {activeTab == 'chat' ? <Chat onSettingsClick={setView} /> : <Settings onBackClick={setView} />}
+      <GoogleCalendarIFrame viewMode={viewMode} timeZone={timeZone} />
+      {activeTab === 'chat' ? (
+        <Chat onSettingsClick={changeTab} />
+      ) : (
+        <Settings 
+          onBackClick={changeTab} 
+          viewMode={viewMode} 
+          timeZone={timeZone}
+          setViewMode={setViewMode} 
+          setTimeZone={setTimeZone} 
+        />
+      )}
     </div>
   );
 }
