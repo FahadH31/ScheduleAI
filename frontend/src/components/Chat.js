@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from "react";
 import { getOpenAIResponse } from "./OpenAICall";
-import { Link } from "react-router-dom";
 import Logo from "../assets/logo.png"
 import MicIcon from "../assets/icons/mic.svg"
 import SendIcon from "../assets/icons/send.svg"
@@ -10,7 +9,7 @@ import LogoutIcon from "../assets/icons/log-out.svg"
 import ReactMarkdown from "react-markdown";
 import useSpeechToText from "../hooks/useSpeechToText";
 
-const Chat = () => {
+const Chat = (props) => {
     const [inputText, setInputText] = useState("");
     const [responses, setResponses] = useState(() => {
         const savedHistory = sessionStorage.getItem("chatHistory");
@@ -20,6 +19,7 @@ const Chat = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const messagesEndRef = useRef(null);
     const { isListening, transcript, startListening, stopListening } = useSpeechToText({ continuous: true });
+    const onSettingsClick = props.onSettingsClick;
 
     useEffect(() => {
         sessionStorage.setItem("chatHistory", JSON.stringify(responses));
@@ -187,13 +187,13 @@ const Chat = () => {
 
             <div className="flex flex-row">
                 {/* Settings Button */}
-                <Link
-                    to="/settings"
+                <button
                     className="ml-0 mr-auto transition-opacity hover:opacity-50"
+                    onClick={onSettingsClick}
                     title="Settings"
                 >
                     <img src={SettingsIcon} className="size-5" alt="Settings icon"></img>
-                </Link>
+                </button>
 
 
                 {/* Logout Button */}
