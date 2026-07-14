@@ -1,6 +1,7 @@
 import { useGoogleLogin } from '@react-oauth/google';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+const BACKEND_URL = `${process.env.REACT_APP_BACKEND_URL}`;
 
 const GoogleLoginButton = () => {
   const navigate = useNavigate();
@@ -9,7 +10,7 @@ const GoogleLoginButton = () => {
     onSuccess: async (tokenResponse) => {
 
       const tokens = await axios.post(`
-        ${process.env.REACT_APP_BACKEND_URL}/api/google-auth`, 
+        ${BACKEND_URL}/api/google-auth`, 
         {tokenResponse},
         {withCredentials: true}
       );

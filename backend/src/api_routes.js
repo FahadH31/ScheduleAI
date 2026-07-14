@@ -44,7 +44,31 @@ router.post("/api/logout", (req, res) => {
   req.session.destroy();
   res.clearCookie('connect.sid');
   console.log("User successfully logged out.")
-  res.json({ success: true });
+  res.status(200).json({ success: true });
+});
+
+// Data Deletion Route
+router.post("/api/delete-data", async (req, res) => {
+
+  if (req.session && req.session.tokens) {
+    const token = req.session.tokens.refresh_token || req.session.tokens.access_token
+
+    try {
+      await axios.post(`https://oauth2.googleapis.com/revoke?token=${token}`, null,
+        { headers: { 'Content-Type': 'application/x-www-form-urlencoded', } }
+      );
+      console.log("Google token successfully revoked.")
+    }
+    catch (error) {
+      console.error("Google token revocation failed: ", error.message);
+    }
+  }
+
+  req.session.destroy()
+  res.clearCookie('connect.sid')
+  console.log("Data destroyed and cookies cleared.")
+  res.status(200).json({ success: true });
+
 });
 
 // Google Authentication Route

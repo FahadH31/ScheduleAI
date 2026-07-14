@@ -1,4 +1,5 @@
 import BackIcon from "../assets/icons/back.svg"
+import DeleteDataButton from "../components/DeleteDataButton"
 
 const Settings = (props) => {
     const onBackClick = props.onBackClick;
@@ -32,7 +33,7 @@ const Settings = (props) => {
             <div className="flex flex-col justify-center items-center mt-4">
                 <h1 className="hidden sm:flow-root sm:text-3xl font-semibold ml-1"> Settings </h1>
                 {/* Input groups */}
-                <div className="mt-6 flex flex-col ml-5 mr-auto">
+                <div className="mt-6 flex flex-col ml-2 mr-2 w-full">
                     <div className="flex flex-col mb-5">
                         <label className="mb-1">View</label>
                         <select
@@ -61,6 +62,7 @@ const Settings = (props) => {
                                 ))}
                         </select>
                     </div>
+                    <DeleteDataButton />
                 </div>
 
             </div>
