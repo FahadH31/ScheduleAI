@@ -5,11 +5,15 @@ const PrivateRoute = () => {
     const [isAuthenticated, setIsAuthenticated] = useState(null);
 
     useEffect(() => {
+        const controller = new AbortController();
         const checkAuth = async () => {
             try {
                 const res = await fetch(
                     `${process.env.REACT_APP_BACKEND_URL}/api/check-auth`,
-                    { credentials: 'include' }
+                    {
+                        credentials: 'include',
+                        signal: controller.signal
+                    }
                 );
 
                 if (res.ok) {
@@ -20,18 +24,22 @@ const PrivateRoute = () => {
                     setIsAuthenticated(false);
                 }
             } catch (error) {
-                console.error("Auth check failed:", error);
-                setIsAuthenticated(false);
+                if (error.name !== 'AbortError') {
+                    console.error("Auth check failed:", error);
+                    setIsAuthenticated(false);
+                }
             }
         };
 
         checkAuth();
+
+        return () => controller.abort();
     }, []);
 
     if (isAuthenticated === null) {
         return <div>Loading...</div>;
     }
-    if(!sessionStorage.getItem("email")){
+    if (!sessionStorage.getItem("email")) {
         window.location.reload()
     }
 
