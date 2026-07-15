@@ -21,7 +21,7 @@ const Settings = (props) => {
     }
 
     return (
-        <div className="flex flex-col p-3 sm:w-1/2 sm:p-6 animate-fadeIn z-20">
+        <div className="flex flex-col p-3 sm:w-[42%] md:w-[40%] lg:w-[37%] xl:w-[35%] sm:p-6 animate-fadeIn z-20">
             {/* Back Button */}
             <button
                 className="ml-0 mr-auto transition-opacity hover:opacity-50"
