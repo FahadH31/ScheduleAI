@@ -41,39 +41,7 @@
   user-select: none;
 }
 
-.calendar-logo-icon {
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: #1a73e8;
-  color: #ffffff;
-  font-weight: 700;
-  font-size: 20px;
-  border-radius: 8px;
-  position: relative;
-  box-shadow: 0 1px 2px 0 rgba(60,64,67,0.3), 0 1px 3px 1px rgba(60,64,67,0.15);
-}
 
-.calendar-logo-icon::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 12px;
-  background-color: rgba(255, 255, 255, 0.2);
-  border-bottom-left-radius: 8px;
-  border-bottom-right-radius: 8px;
-}
-
-.calendar-header-title {
-  font-size: 22px;
-  color: #5f6368;
-  margin-left: 4px;
-  font-weight: 400;
-}
 
 .calendar-nav-controls {
   display: flex;
@@ -133,14 +101,6 @@
   min-width: 150px;
 }
 
-.timezone-indicator {
-  font-size: 12px;
-  color: #70757a;
-  margin-left: 8px;
-  background-color: #f1f3f4;
-  padding: 2px 8px;
-  border-radius: 12px;
-}
 
 /* FullCalendar Customizations */
 
@@ -418,10 +378,6 @@
   border: 1px solid rgba(0, 0, 0, 0.05);
 }
 
-.event-details-header-stripe {
-  height: 6px;
-  width: 100%;
-}
 
 .event-details-content {
   padding: 12px 24px 24px 24px;
@@ -488,11 +444,6 @@
   font-weight: 400;
 }
 
-.event-details-recurrence {
-  font-size: 12px;
-  color: #70757a;
-  margin-top: 2px;
-}
 
 .event-details-location {
   font-size: 14px;

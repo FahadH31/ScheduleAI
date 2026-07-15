@@ -7,32 +7,24 @@ import momentTimezonePlugin from '@fullcalendar/moment-timezone';
 import ScheduleAILogo from '../assets/logo.png';
 import './CustomCalendar.css';
 
-// Hex color codes mapping standard Google Calendar event color IDs (1-11)
+// Maps Google Calendar event color IDs (1-11) to Hex color values
 const getGoogleEventColors = (colorId) => {
   const colors = {
-    '1': { bg: '#e8f0fe', border: '#1a73e8', text: '#1a73e8', name: 'Lavender' }, // Baby Blue
-    '2': { bg: '#e6f4ea', border: '#137333', text: '#137333', name: 'Sage' }, // Lime Green
-    '3': { bg: '#f3e8fd', border: '#8ab4f8', text: '#b06000', name: 'Grape' }, // Purple (Mapped to grape hex)
-    '4': { bg: '#fce8e6', border: '#c5221f', text: '#c5221f', name: 'Flamingo' }, // Salmon
-    '5': { bg: '#fef7e0', border: '#b06000', text: '#b06000', name: 'Banana' }, // Yellow
-    '6': { bg: '#feefe3', border: '#e06000', text: '#e06000', name: 'Tangerine' }, // Orange
-    '7': { bg: '#e4f7fb', border: '#007b83', text: '#007b83', name: 'Peacock' }, // Blue
-    '8': { bg: '#f1f3f4', border: '#5f6368', text: '#3c4043', name: 'Graphite' }, // Gray
-    '9': { bg: '#e8f0fe', border: '#1a73e8', text: '#1a73e8', name: 'Blueberry' }, // Navy Blue
-    '10': { bg: '#e6f4ea', border: '#137333', text: '#137333', name: 'Basil' }, // Dark Green
-    '11': { bg: '#fce8e6', border: '#c5221f', text: '#c5221f', name: 'Tomato' }  // Red
+    '1': { bg: '#e8f0fe', border: '#1a73e8', text: '#1a73e8', name: 'Lavender' },
+    '2': { bg: '#e6f4ea', border: '#137333', text: '#137333', name: 'Sage' },
+    '3': { bg: '#f3e8fd', border: '#8ab4f8', text: '#b06000', name: 'Grape' },
+    '4': { bg: '#fce8e6', border: '#c5221f', text: '#c5221f', name: 'Flamingo' },
+    '5': { bg: '#fef7e0', border: '#b06000', text: '#b06000', name: 'Banana' },
+    '6': { bg: '#feefe3', border: '#e06000', text: '#e06000', name: 'Tangerine' },
+    '7': { bg: '#e4f7fb', border: '#007b83', text: '#007b83', name: 'Peacock' },
+    '8': { bg: '#f1f3f4', border: '#5f6368', text: '#3c4043', name: 'Graphite' },
+    '9': { bg: '#e8f0fe', border: '#1a73e8', text: '#1a73e8', name: 'Blueberry' },
+    '10': { bg: '#e6f4ea', border: '#137333', text: '#137333', name: 'Basil' },
+    '11': { bg: '#fce8e6', border: '#c5221f', text: '#c5221f', name: 'Tomato' }
   };
 
-  // Google Calendar default event color (Peacock blue accent)
   return colors[colorId] || { bg: '#e8f0fe', border: '#1a73e8', text: '#1a73e8', name: 'Default Blue' };
 };
-
-// Inline SVGs for Google Calendar icons
-const CalendarLogo = () => (
-  <div className="calendar-logo-icon">
-    <span>{new Date().getDate()}</span>
-  </div>
-);
 
 const ClockIcon = () => (
   <svg className="w-5 h-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -77,26 +69,27 @@ const ChevronRightIcon = () => (
   </svg>
 );
 
-// Date formatting helper that mimics Google Calendar display formats
+// Helper to format event date/time displays
 const formatEventTime = (startStr, endStr, allDay, timeZone) => {
   if (!startStr) return '';
   
   const start = new Date(startStr);
   const end = endStr ? new Date(endStr) : null;
   
+  // Use UTC to format date and time components of the UTC-coerced FullCalendar dates
   const dateOptions = { 
     weekday: 'long', 
     year: 'numeric', 
     month: 'long', 
     day: 'numeric',
-    timeZone: timeZone 
+    timeZone: 'UTC' 
   };
   
   const timeOptions = { 
     hour: 'numeric', 
     minute: '2-digit',
     hour12: true,
-    timeZone: timeZone
+    timeZone: 'UTC'
   };
 
   const getTZName = (dateObj) => {
@@ -178,7 +171,7 @@ const CustomCalendar = (props) => {
     }
   };
 
-  // Sync settings view mode prop to FullCalendar view
+  // Sync viewMode prop with FullCalendar view
   useEffect(() => {
     if (calendarRef.current) {
       const calendarApi = calendarRef.current.getApi();
@@ -189,7 +182,6 @@ const CustomCalendar = (props) => {
     }
   }, [viewMode]);
 
-  // Fetch events function
   const loadEvents = async (start, end) => {
     if (!start || !end) return;
     setLoading(true);
@@ -235,14 +227,14 @@ const CustomCalendar = (props) => {
     }
   };
 
-  // Fetch events when the dates or timezone changes
+  // Reload events when range or timezone changes
   useEffect(() => {
     if (dateRange.start && dateRange.end) {
       loadEvents(dateRange.start, dateRange.end);
     }
   }, [dateRange, timeZone]);
 
-  // Listen for 'reload' window message (triggered after AI actions)
+  // Listen for reload events (e.g. from chatbot updates)
   useEffect(() => {
     const handleMessage = (e) => {
       if (e.origin !== window.location.origin) return;
@@ -256,7 +248,6 @@ const CustomCalendar = (props) => {
     return () => window.removeEventListener('message', handleMessage);
   }, [dateRange]);
 
-  // FullCalendar event callbacks
   const handleDatesSet = (dateInfo) => {
     setDateRange({ start: dateInfo.startStr, end: dateInfo.endStr });
     setTitle(dateInfo.view.title);
@@ -279,7 +270,7 @@ const CustomCalendar = (props) => {
     setIsModalOpen(true);
   };
 
-  // Custom event rendering to style like Google Calendar
+  // Custom event content renderer
   const renderEventContent = (eventInfo) => {
     const colors = getGoogleEventColors(eventInfo.event.extendedProps.colorId);
     const title = eventInfo.event.title;
@@ -287,7 +278,6 @@ const CustomCalendar = (props) => {
     const viewType = eventInfo.view.type;
 
     if (viewType === 'dayGridMonth') {
-      // Month view is horizontal pills
       return (
         <div 
           className="w-full px-1.5 py-0.5 rounded text-xs truncate select-none"
@@ -305,7 +295,6 @@ const CustomCalendar = (props) => {
         </div>
       );
     } else {
-      // Week/Day view is vertical boxes
       return (
         <div 
           className="w-full h-full p-1.5 rounded text-xs select-none flex flex-col overflow-hidden box-border"
@@ -332,7 +321,7 @@ const CustomCalendar = (props) => {
     }
   };
 
-  // Custom cell header render for Month View to style active today circle
+  // Custom day cell render (month view)
   const renderDayCellContent = (dayCellInfo) => {
     if (dayCellInfo.view.type !== 'dayGridMonth') return null;
     
@@ -345,15 +334,15 @@ const CustomCalendar = (props) => {
     );
   };
 
-  // Custom header render for views
+  // Custom weekday/date header render
   const renderDayHeaderContent = (headerInfo) => {
     const isToday = headerInfo.isToday;
     const date = headerInfo.date;
     
-    // Format weekday name and date number in the calendar's timezone to prevent offset shifting
+    // Format using UTC to align with FullCalendar's UTC-coerced date representation
     const dayName = date.toLocaleDateString('en-US', { 
       weekday: 'short',
-      timeZone: timeZone 
+      timeZone: 'UTC' 
     });
     
     if (headerInfo.view.type === 'dayGridMonth') {
@@ -364,7 +353,7 @@ const CustomCalendar = (props) => {
 
     const dayNumber = date.toLocaleDateString('en-US', { 
       day: 'numeric',
-      timeZone: timeZone 
+      timeZone: 'UTC' 
     });
 
     return (
@@ -375,7 +364,6 @@ const CustomCalendar = (props) => {
     );
   };
 
-  // Navigation handlers driven by FullCalendar API
   const handleToday = () => {
     if (calendarRef.current) {
       const api = calendarRef.current.getApi();
@@ -419,7 +407,7 @@ const CustomCalendar = (props) => {
           </div>
         </div>
 
-        {/* Custom View Mode Switcher Dropdown (Google Calendar Style) */}
+        {/* View Switcher Dropdown */}
         <div className="calendar-header-right" ref={dropdownRef}>
           <div className="custom-dropdown">
             <button 
@@ -489,16 +477,15 @@ const CustomCalendar = (props) => {
         </div>
       )}
 
-      {/* Google-like linear loading bar */}
+      {/* Progress indicator */}
       {loading && <div className="linear-progress-bar" />}
 
-      {/* Calendar Area */}
       <div className="flex-1 min-h-0 flex flex-col p-4 custom-calendar-container">
         <FullCalendar
           ref={calendarRef}
           plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin, momentTimezonePlugin]}
           initialView={viewMode === 'WEEK' ? 'timeGridWeek' : viewMode === 'AGENDA' ? 'timeGridDay' : 'dayGridMonth'}
-          headerToolbar={false} // We provide our own beautiful custom header
+          headerToolbar={false}
           events={events}
           timeZone={timeZone}
           nowIndicator={true}
@@ -512,7 +499,7 @@ const CustomCalendar = (props) => {
           allDaySlot={false}
           slotEventOverlap={true}
           scrollTime="07:00:00"
-          firstDay={0} // Start week on Sunday
+          firstDay={0}
           eventTimeFormat={{
             hour: 'numeric',
             minute: '2-digit',
@@ -532,7 +519,7 @@ const CustomCalendar = (props) => {
         />
       </div>
 
-      {/* Event Details Card Modal */}
+      {/* Event Details Modal */}
       {isModalOpen && selectedEvent && (() => {
         const colors = getGoogleEventColors(selectedEvent.colorId);
         return (
