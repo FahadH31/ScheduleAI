@@ -269,7 +269,7 @@ const Chat = (props) => {
 
             <form onSubmit={handleSubmit} className="flex mt-1 mb-5">
                 <textarea
-                    className="w-[90%] p-3 rounded-lg bg-gray-700 text-white text-md resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-[90%] p-3 rounded-lg bg-gray-700 text-white text-md resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 scrollbar-thin scrollbar-thumb-gray-400"
                     placeholder="Type your message here..."
                     value={isListening ? inputText + (transcript.length ? (inputText.length ? ' ' : '') + transcript : '') : inputText}
                     onChange={handleInputChange}
