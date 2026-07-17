@@ -113,7 +113,7 @@ const Chat = (props) => {
     };
 
     return (
-        <div className="flex flex-col p-3 sm:w-1/2 sm:p-6 animate-fadeIn z-20">
+        <div className="flex flex-col p-3 sm:w-[42%] md:w-[40%] lg:w-[37%] xl:w-[35%] sm:p-6 animate-fadeIn z-20">
             {/* Help Modal */}
             {isModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 transition-opacity animate-fadeIn">
@@ -269,7 +269,7 @@ const Chat = (props) => {
 
             <form onSubmit={handleSubmit} className="flex mt-1 mb-5">
                 <textarea
-                    className="w-[90%] p-3 rounded-lg bg-gray-700 text-white text-md resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-[90%] p-3 rounded-lg bg-gray-700 text-white text-md resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 scrollbar-thin scrollbar-thumb-gray-400"
                     placeholder="Type your message here..."
                     value={isListening ? inputText + (transcript.length ? (inputText.length ? ' ' : '') + transcript : '') : inputText}
                     onChange={handleInputChange}

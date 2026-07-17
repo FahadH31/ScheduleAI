@@ -3,7 +3,7 @@ const ratelimit = require('express-rate-limit')
 const axios = require('axios');
 const date = require('date-and-time');
 const { openaiClient, oAuthInitializer } = require('./authentication');
-const { callFunction, getCalendarEvents } = require('./calendar_functions');
+const { callFunction, getCalendarEvents, getEventsList } = require('./calendar_functions');
 const { CONVERSATION_HISTORY_LENGTH, TOOLS } = require('./constants');
 
 const router = express.Router();
@@ -92,6 +92,43 @@ router.post("/api/google-auth", async (req, res) => {
 
   res.status(200).json({ success: true, email: email });
 });
+
+// Route to get calendar events in a specific time range
+router.get("/api/calendar-events", async (req, res) => {
+  if (!req.session || !req.session.tokens) {
+    return res.status(401).json({ success: false, error: "Not authenticated" });
+  }
+
+  let timeMin = req.query.timeMin;
+  let timeMax = req.query.timeMax;
+
+  try {
+    timeMin = new Date(timeMin).toISOString();
+  } catch (e) {
+    timeMin = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+  }
+
+  try {
+    timeMax = new Date(timeMax).toISOString();
+  } catch (e) {
+    timeMax = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString();
+  }
+
+  console.log(`[API] calendar-events requested: timeMin=${timeMin}, timeMax=${timeMax}`);
+
+  try {
+    const events = await getEventsList(req.session.tokens.access_token, timeMin, timeMax);
+    console.log(`[API] calendar-events retrieved: count=${events.length}`);
+    res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+    res.setHeader("Pragma", "no-cache");
+    res.setHeader("Expires", "0");
+    res.json({ success: true, events });
+  } catch (error) {
+    console.error("Error in calendar-events route:", error.message);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 
 
 // OpenAI Chat Route

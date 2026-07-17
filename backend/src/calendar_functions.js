@@ -188,7 +188,31 @@ async function undoPrompt(accessToken, undoStack) {
   }
 }
 
+// Function to list events in a range
+async function getEventsList(accessToken, timeMin, timeMax) {
+  const auth = new google.auth.OAuth2();
+  auth.setCredentials({ access_token: accessToken });
+  const calendar = google.calendar({ version: 'v3', auth });
+
+  try {
+    const response = await calendar.events.list({
+      calendarId: 'primary',
+      timeMin: timeMin,
+      timeMax: timeMax,
+      singleEvents: true,
+      orderBy: 'startTime',
+      maxResults: 250,
+    });
+    const items = response.data.items || [];
+    return items.filter(event => event.status !== 'cancelled');
+  } catch (error) {
+    console.error('Error fetching calendar events list:', error);
+    throw error;
+  }
+}
+
 module.exports = {
   callFunction,
-  getCalendarEvents
+  getCalendarEvents,
+  getEventsList
 };

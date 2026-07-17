@@ -3,28 +3,27 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
-    "@fullcalendar/daygrid": "^6.1.15",
-    "@fullcalendar/interaction": "^6.1.15",
-    "@fullcalendar/react": "^6.1.15",
-    "@fullcalendar/timegrid": "^6.1.15",
     "@react-oauth/google": "^0.12.1",
     "@tailwindcss/typography": "^0.5.16",
+    "@tailwindcss/vite": "^4.3.2",
+    "@vitejs/plugin-react": "^6.0.3",
     "axios": "^1.7.9",
     "cra-template": "1.2.0",
+    "moment-timezone": "^0.5.48",
     "react": "^19.0.0",
     "react-bootstrap": "^2.10.10",
     "react-calendar": "^5.1.0",
     "react-dom": "^19.0.0",
     "react-markdown": "^10.1.0",
     "react-router-dom": "^7.1.2",
-    "react-scripts": "5.0.1",
+    "vite": "^8.1.4",
     "web-vitals": "^4.2.4"
   },
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "dev": "vite",
+    "start": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
   },
   "eslintConfig": {
     "extends": [
@@ -46,7 +45,7 @@
   },
   "devDependencies": {
     "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
-    "tailwindcss": "^3.4.17"
+    "tailwindcss": "^4.0.0"
   },
   "overrides": {
     "nth-check": "^2.1.1",

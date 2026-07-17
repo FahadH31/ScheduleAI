@@ -1,6 +1,9 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+@theme {
+  --font-sans: "Inter", sans-serif;
+}
 
 .custom-scrollbar {
   scrollbar-width: none;
@@ -15,6 +18,12 @@
 
 .custom-scrollbar::-webkit-scrollbar {
   display: none;
+}
+
+/* Global button hover cursor restoration */
+button:not([disabled]),
+[role="button"]:not([disabled]) {
+  cursor: pointer;
 }
 
 @keyframes fadeIn {

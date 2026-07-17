@@ -31,7 +31,7 @@ const DeleteDataButton = () => {
                     <div className="bg-gray-900 border border-gray-700/50 rounded-2xl shadow-2xl max-w-2xl w-full p-8 text-white relative max-h-[90vh] overflow-y-auto custom-scrollbar">
                         <p>
                             Are you sure you want to continue? Proceeding will <b>permanently
-                            delete all user-specific data </b> (conversation history, stored settings, etc.)
+                                delete all user-specific data </b> (conversation history, stored settings, etc.)
                         </p>
                         <div className="flex items-center">
                             <button
@@ -51,7 +51,7 @@ const DeleteDataButton = () => {
                 </div>
             )}
             <button
-                className="rounded-md bg-red-500 mt-10 w-28 h-12 mr-auto"
+                className="rounded-md bg-red-500 mt-10 w-28 h-12 ml-auto mr-auto mt-auto mb-10 transition-all hover:bg-red-600"
                 onClick={() => setIsModalOpen(true)}
             >
                 Delete Data
