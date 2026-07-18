@@ -17,7 +17,7 @@ app.use(session({
   secret: process.env.SESSION_SECRET,
   store: MongoStore.create({
     mongoUrl: process.env.MONGODB_URL,
-    dbName: 'session-storage'
+    dbName: 'user-data'
   }),
   httpOnly: true,
   saveUninitialized: false,

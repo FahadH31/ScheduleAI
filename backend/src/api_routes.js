@@ -2,8 +2,9 @@ const express = require('express');
 const ratelimit = require('express-rate-limit')
 const axios = require('axios');
 const date = require('date-and-time');
-const { openaiClient, oAuthInitializer } = require('./authentication');
+const { openaiClient, oAuthInitializer, getAuthorizedClient } = require('./authentication');
 const { callFunction, getCalendarEvents, getEventsList } = require('./calendar_functions');
+const { saveRefreshToken, getRefreshToken, deleteUserData } = require('./db');
 const { CONVERSATION_HISTORY_LENGTH, TOOLS } = require('./constants');
 
 const router = express.Router();
@@ -64,6 +65,14 @@ router.post("/api/delete-data", async (req, res) => {
     }
   }
 
+  if (req.session && req.session.email) {
+    try {
+      await deleteUserData(req.session.email);
+    } catch (dbError) {
+      console.error("Failed to delete user refresh token from DB:", dbError.message);
+    }
+  }
+
   req.session.destroy()
   res.clearCookie('connect.sid')
   console.log("Data destroyed and cookies cleared.")
@@ -76,7 +85,6 @@ router.post("/api/google-auth", async (req, res) => {
   const auth = oAuthInitializer();
   const { tokens } = await auth.getToken(req.body.tokenResponse); // Exchange auth code for tokens  
   auth.setCredentials(tokens);
-  req.session.tokens = tokens; // stores token object in server-side session
 
   // get user email
   const userInfoResponse = await axios.get(
@@ -89,6 +97,18 @@ router.post("/api/google-auth", async (req, res) => {
   );
   const email = userInfoResponse.data.email;
   req.session.email = email;
+
+  // Store or load the refresh token via DB
+  if (tokens.refresh_token) {
+    await saveRefreshToken(email, tokens.refresh_token);
+  } else {
+    const storedRefreshToken = await getRefreshToken(email);
+    if (storedRefreshToken) {
+      tokens.refresh_token = storedRefreshToken;
+    }
+  }
+
+  req.session.tokens = tokens; // store token object in server-side session
 
   res.status(200).json({ success: true, email: email });
 });
@@ -114,11 +134,15 @@ router.get("/api/calendar-events", async (req, res) => {
     timeMax = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString();
   }
 
-  console.log(`[API] calendar-events requested: timeMin=${timeMin}, timeMax=${timeMax}`);
 
   try {
-    const events = await getEventsList(req.session.tokens.access_token, timeMin, timeMax);
-    console.log(`[API] calendar-events retrieved: count=${events.length}`);
+    const auth = getAuthorizedClient(req.session.tokens, (newTokens) => {
+      req.session.tokens = { ...req.session.tokens, ...newTokens };
+      req.session.save((err) => {
+        if (err) console.error("Session save error during token refresh:", err);
+      });
+    });
+    const events = await getEventsList(auth, timeMin, timeMax);
     res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
     res.setHeader("Pragma", "no-cache");
     res.setHeader("Expires", "0");
@@ -144,7 +168,14 @@ router.post("/api/openai", limiter, async (req, res) => {
     return res.status(401).json({ error: "Not authenticated" });
   }
   var calendarAction = "OTHER"
-  const access_token = req.session.tokens.access_token;
+
+  // Setup client and handle automatic token updates
+  const auth = getAuthorizedClient(req.session.tokens, (newTokens) => {
+    req.session.tokens = { ...req.session.tokens, ...newTokens };
+    req.session.save((err) => {
+      if (err) console.error("Session save error during chat token refresh:", err);
+    });
+  });
 
 
   // Retrieve and validate user prompt
@@ -177,7 +208,7 @@ router.post("/api/openai", limiter, async (req, res) => {
   var timeZone = req.header("User-TimeZone");
 
   // Store upcoming events to provide in OpenAI call.
-  var upcomingEvents = await getCalendarEvents(access_token);
+  var upcomingEvents = await getCalendarEvents(auth);
   upcomingEvents = JSON.stringify(upcomingEvents);
 
   try {
@@ -222,7 +253,7 @@ router.post("/api/openai", limiter, async (req, res) => {
         calendarAction = name; // update calendarAction
         const args = JSON.parse(toolCall.function.arguments);
 
-        const result = await callFunction(access_token, name, args, req.session.undoStack)
+        const result = await callFunction(auth, name, args, req.session.undoStack)
 
         if (name != "undoPrompt") { // if it's an action, store the undo data
           const undoAction = result.undoAction

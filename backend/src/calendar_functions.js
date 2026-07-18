@@ -2,25 +2,23 @@ const { google } = require('googleapis');
 const { VISIBLE_UPCOMING_EVENTS } = require('./constants');
 
 // Function router
-async function callFunction(accessToken, name, args, undoStack) {
+async function callFunction(auth, name, args, undoStack) {
   if (name == "createEvent") {
-    return await createEvent(accessToken, args)
+    return await createEvent(auth, args)
   }
   if (name == "updateEvent") {
-    return await updateEvent(accessToken, args)
+    return await updateEvent(auth, args)
   }
   if (name == "deleteEvent") {
-    return await deleteEvent(accessToken, args.eventId)
+    return await deleteEvent(auth, args.eventId)
   }
   if (name == "undoPrompt") {
-    return await undoPrompt(accessToken, undoStack)
+    return await undoPrompt(auth, undoStack)
   }
 }
 
 // Function to get the user's upcoming events
-async function getCalendarEvents(accessToken) {
-  const auth = new google.auth.OAuth2();
-  auth.setCredentials({ access_token: accessToken });
+async function getCalendarEvents(auth) {
   const calendar = google.calendar({ version: 'v3', auth });
 
   // Get the date one week ago, time set to midnight 
@@ -32,7 +30,7 @@ async function getCalendarEvents(accessToken) {
   date.setMilliseconds(0)
 
   const currentDate = date.getDate()
-  date.setDate(currentDate-7) // set date to last week
+  date.setDate(currentDate - 7) // set date to last week
 
   try {
     const response = await calendar.events.list({
@@ -67,12 +65,9 @@ async function getCalendarEvents(accessToken) {
 }
 
 // Function to create an event for the user's Google Calendar
-async function createEvent(accessToken, eventData) {
+async function createEvent(auth, eventData) {
   // Insert the data 
   try {
-    const auth = new google.auth.OAuth2();
-    auth.setCredentials({ access_token: accessToken });
-
     const calendar = google.calendar({ version: "v3", auth });
     const response = await calendar.events.insert({
       auth: auth,
@@ -94,12 +89,9 @@ async function createEvent(accessToken, eventData) {
 }
 
 // Function to update an event on the user's Google Calendar
-async function updateEvent(accessToken, eventData) {
+async function updateEvent(auth, eventData) {
   const eventId = eventData.eventId
   const updatedEvent = eventData.updatedEventData
-
-  const auth = new google.auth.OAuth2();
-  auth.setCredentials({ access_token: accessToken });
   const calendar = google.calendar({ version: 'v3', auth });
 
   try {
@@ -131,9 +123,7 @@ async function updateEvent(accessToken, eventData) {
 }
 
 // Function to delete an event from the user's Google Calendar
-async function deleteEvent(accessToken, eventId) {
-  const auth = new google.auth.OAuth2();
-  auth.setCredentials({ access_token: accessToken });
+async function deleteEvent(auth, eventId) {
   const calendar = google.calendar({ version: 'v3', auth });
 
   try {
@@ -167,7 +157,7 @@ async function deleteEvent(accessToken, eventId) {
 }
 
 // Function to undo a user prompt
-async function undoPrompt(accessToken, undoStack) {
+async function undoPrompt(auth, undoStack) {
   try {
     const lastPrompt = undoStack.pop()
 
@@ -178,7 +168,7 @@ async function undoPrompt(accessToken, undoStack) {
     const results = [];
     // Loop through commands in the last prompt and call respective function w/data to undo each action
     for (let i = lastPrompt.length - 1; i >= 0; i--) { // in reverse order to ensure commands follow original sequence 
-      const result = await callFunction(accessToken, lastPrompt[i].name, lastPrompt[i].data)
+      const result = await callFunction(auth, lastPrompt[i].name, lastPrompt[i].data)
       results.push(result.success)
     }
 
@@ -189,9 +179,7 @@ async function undoPrompt(accessToken, undoStack) {
 }
 
 // Function to list events in a range
-async function getEventsList(accessToken, timeMin, timeMax) {
-  const auth = new google.auth.OAuth2();
-  auth.setCredentials({ access_token: accessToken });
+async function getEventsList(auth, timeMin, timeMax) {
   const calendar = google.calendar({ version: 'v3', auth });
 
   try {

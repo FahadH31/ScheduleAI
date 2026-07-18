@@ -18,7 +18,22 @@ const oAuthInitializer = () => {
   return oAuth2Client;
 }
 
+// Helper function to create fully authorized client 
+const getAuthorizedClient = (authTokens, onTokensRefreshed) => {
+  const auth = oAuthInitializer();
+  auth.setCredentials(authTokens);
+
+  if (onTokensRefreshed) {
+    auth.on('tokens', (newTokens) => {
+      onTokensRefreshed(newTokens);
+    });
+  }
+  return auth;
+};
+
+
 module.exports = {
   openaiClient,
   oAuthInitializer,
+  getAuthorizedClient
 };
