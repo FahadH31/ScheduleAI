@@ -267,5 +267,6 @@ TOOLS = [
 
 module.exports = {
     CONVERSATION_HISTORY_LENGTH,
+    VISIBLE_UPCOMING_EVENTS,
     TOOLS,
 }

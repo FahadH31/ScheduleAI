@@ -294,7 +294,18 @@ const CustomCalendar = (props) => {
             }
           }));
         console.log("API calendar-events loaded. Count:", data.events?.length, "Mapped:", mapped.length);
-        setEvents(mapped);
+        setEvents(prevEvents => {
+          const newEvents = [...prevEvents];
+          mapped.forEach(incomingEvent => {
+            const index = newEvents.findIndex(e => e.id === incomingEvent.id);
+            if (index > -1) {
+              newEvents[index] = incomingEvent; // Update if changed
+            } else {
+              newEvents.push(incomingEvent);
+            }
+          });
+          return newEvents;
+        });
       } else {
         throw new Error(data.error || "Failed to load events");
       }
@@ -859,6 +870,17 @@ const CustomCalendar = (props) => {
           )}
         </div>
       </header>
+
+      {/* Loading Indicator */}
+      <div className={`h-[3px] w-full bg-blue-50/50 z-20 transition-opacity duration-300 ${loading ? 'opacity-100' : 'opacity-0'} overflow-hidden relative flex-shrink-0`}>
+        <div className="absolute top-0 bottom-0 bg-[#1a73e8] rounded-full w-1/3" style={{ animation: 'indeterminate-progress 1.5s infinite ease-in-out' }}></div>
+        <style>{`
+          @keyframes indeterminate-progress {
+            0% { left: -40%; }
+            100% { left: 100%; }
+          }
+        `}</style>
+      </div>
 
       {/* Error banner */}
       {error && (

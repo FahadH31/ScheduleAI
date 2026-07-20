@@ -39,7 +39,7 @@ const PrivateRoute = () => {
     if (isAuthenticated === null) {
         return <div>Loading...</div>;
     }
-    if (!sessionStorage.getItem("email")) {
+    if (isAuthenticated && !sessionStorage.getItem("email")) {
         window.location.reload()
     }
 
