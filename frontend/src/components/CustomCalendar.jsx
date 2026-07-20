@@ -46,6 +46,12 @@ const InfoIcon = () => (
   </svg>
 );
 
+const BellIcon = () => (
+  <svg className="w-5 h-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+  </svg>
+);
+
 const XIcon = () => (
   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -290,7 +296,8 @@ const CustomCalendar = (props) => {
               description: event.description,
               location: event.location,
               rawStart: event.start,
-              rawEnd: event.end
+              rawEnd: event.end,
+              reminders: event.reminders
             }
           }));
         console.log("API calendar-events loaded. Count:", data.events?.length, "Mapped:", mapped.length);
@@ -378,7 +385,8 @@ const CustomCalendar = (props) => {
       description: e.extendedProps?.description,
       location: e.extendedProps?.location,
       rawStart: e.extendedProps?.rawStart,
-      rawEnd: e.extendedProps?.rawEnd
+      rawEnd: e.extendedProps?.rawEnd,
+      reminders: e.extendedProps?.reminders
     });
     setIsModalOpen(true);
   };
@@ -899,61 +907,95 @@ const CustomCalendar = (props) => {
       {isModalOpen && selectedEvent && (() => {
         const colors = getGoogleEventColors(selectedEvent.colorId);
         return (
-          <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50 animate-fadeIn" onClick={() => setIsModalOpen(false)}>
-            <div className="bg-white border border-[#dadce0] rounded-2xl shadow-2xl max-w-md w-full overflow-hidden select-text text-[#3c4043]" onClick={(e) => e.stopPropagation()}>
-              
-              <div className="flex justify-end p-2 border-b border-gray-100">
-                <button className="p-1 rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors cursor-pointer" onClick={() => setIsModalOpen(false)}>
-                  <XIcon />
-                </button>
-              </div>
+          <div className="fixed inset-0 bg-black/30 flex items-center justify-center p-4 z-50 animate-fadeIn" onClick={() => setIsModalOpen(false)}>
+            <div className="bg-white rounded-[24px] shadow-2xl max-w-md w-full overflow-hidden select-text text-[#3c4043] relative transition-all" onClick={(e) => e.stopPropagation()}>
 
-              <div className="p-5 space-y-4">
-                <div className="flex items-start gap-3">
+              {/* Close Button */}
+              <button 
+                className="absolute top-5 right-5 p-1.5 rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-700 transition-all cursor-pointer z-10" 
+                onClick={() => setIsModalOpen(false)}
+              >
+                <XIcon />
+              </button>
+
+              <div className="px-6 pt-5 pb-7 space-y-6">
+                {/* Title and Dot */}
+                <div className="flex items-start gap-3.5 pr-8">
                   <span 
-                    className="w-4 h-4 rounded-full mt-1.5 flex-shrink-0 shadow-inner" 
-                    style={{ backgroundColor: colors.border }}
+                    className="w-3.5 h-3.5 rounded-full mt-1.5 flex-shrink-0" 
+                    style={{ backgroundColor: colors.border, boxShadow: `0 0 0 4px ${colors.bg}` }}
                     title={`Color ID: ${selectedEvent.colorId || 'Default'}`}
                   />
-                  <div>
-                    <h2 className="text-lg font-bold text-gray-900 leading-snug">{selectedEvent.title}</h2>
-                  </div>
+                  <h2 className="text-[22px] font-semibold text-gray-900 leading-tight tracking-tight">{selectedEvent.title}</h2>
                 </div>
 
-                <div className="flex items-start gap-3 text-sm text-gray-600">
-                  <div className="mt-0.5">
-                    <ClockIcon />
-                  </div>
-                  <div>
-                    <div className="font-semibold text-gray-800">
+                <div className="space-y-4 pt-1">
+                  {/* Time */}
+                  <div className="flex items-start gap-4 text-[15px] text-gray-700">
+                    <div className="mt-0.5 text-gray-400">
+                      <ClockIcon />
+                    </div>
+                    <div className="font-medium">
                       {formatEventTime(selectedEvent.start, selectedEvent.end, selectedEvent.allDay, timeZone)}
                     </div>
                   </div>
+
+                  {/* Location */}
+                  {selectedEvent.location && (
+                    <div className="flex items-start gap-4 text-[15px] text-gray-700">
+                      <div className="mt-0.5 text-gray-400">
+                        <MapPinIcon />
+                      </div>
+                      <div className="break-words max-w-[320px] font-medium">{selectedEvent.location}</div>
+                    </div>
+                  )}
+
+                  {/* Description */}
+                  {selectedEvent.description && (
+                    <div className="flex items-start gap-4 text-[15px] text-gray-600">
+                      <div className="mt-0.5 text-gray-400 flex-shrink-0">
+                        <AlignLeftIcon />
+                      </div>
+                      <div className="prose prose-sm break-words max-w-[320px] whitespace-pre-line leading-relaxed max-h-40 overflow-y-auto scrollbar-thumb-gray-400 pr-2">
+                        {selectedEvent.description}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Notifications */}
+                  {selectedEvent.reminders && (selectedEvent.reminders.useDefault || (selectedEvent.reminders.overrides && selectedEvent.reminders.overrides.length > 0)) && (
+                    <div className="flex items-start gap-4 text-[15px] text-gray-600">
+                      <div className="mt-0.5 text-gray-400">
+                        <BellIcon />
+                      </div>
+                      <div>
+                        {selectedEvent.reminders.useDefault ? (
+                          <div>Default notifications</div>
+                        ) : (
+                          selectedEvent.reminders.overrides.map((reminder, idx) => {
+                            const time = reminder.minutes >= 1440 
+                              ? `${reminder.minutes / 1440} day(s)` 
+                              : reminder.minutes >= 60 
+                                ? `${reminder.minutes / 60} hour(s)` 
+                                : `${reminder.minutes} minute(s)`;
+                            const method = reminder.method === 'email' ? 'Email' : 'Notification';
+                            return (
+                              <div key={idx}>
+                                {method} • {time} before
+                              </div>
+                            );
+                          })
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
-                {selectedEvent.location && (
-                  <div className="flex items-start gap-3 text-sm text-gray-600">
-                    <div className="mt-0.5">
-                      <MapPinIcon />
-                    </div>
-                    <div className="break-words max-w-[340px]">{selectedEvent.location}</div>
+                <div className="flex items-start gap-3 bg-blue-50/60 border border-blue-100/60 p-4 rounded-2xl text-[13px] text-blue-700/90 mt-2">
+                  <div className="mt-0.5">
+                    <InfoIcon />
                   </div>
-                )}
-
-                {selectedEvent.description && (
-                  <div className="flex items-start gap-3 text-sm text-gray-600">
-                    <div className="mt-0.5">
-                      <AlignLeftIcon />
-                    </div>
-                    <div className="prose prose-xs break-words max-w-[340px] whitespace-pre-line text-gray-600">
-                      {selectedEvent.description}
-                    </div>
-                  </div>
-                )}
-
-                <div className="flex items-start gap-2 bg-blue-50 border border-blue-100 p-3 rounded-xl text-xs text-blue-700 mt-4 shadow-sm">
-                  <InfoIcon />
-                  <span>To edit or delete this event, ask the AI Assistant in the chat!</span>
+                  <span className="leading-relaxed font-medium">To edit or delete this event, ask the AI Assistant in the chat!</span>
                 </div>
               </div>
             </div>
