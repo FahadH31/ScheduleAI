@@ -1,6 +1,5 @@
 const { OAuth2Client } = require('google-auth-library');
 const OpenAI = require('openai');
-require('dotenv').config();
 
 // Initialize OpenAI Client
 const openaiClient = new OpenAI({

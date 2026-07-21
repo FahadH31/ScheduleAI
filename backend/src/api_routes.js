@@ -123,16 +123,18 @@ router.get("/api/calendar-events", async (req, res) => {
   let timeMin = req.query.timeMin;
   let timeMax = req.query.timeMax;
 
-  try {
-    timeMin = new Date(timeMin).toISOString();
-  } catch (e) {
+  const parsedTimeMin = new Date(timeMin);
+  if (isNaN(parsedTimeMin.getTime())) {
     timeMin = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+  } else {
+    timeMin = parsedTimeMin.toISOString();
   }
 
-  try {
-    timeMax = new Date(timeMax).toISOString();
-  } catch (e) {
+  const parsedTimeMax = new Date(timeMax);
+  if (isNaN(parsedTimeMax.getTime())) {
     timeMax = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString();
+  } else {
+    timeMax = parsedTimeMax.toISOString();
   }
 
 

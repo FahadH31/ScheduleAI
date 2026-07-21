@@ -74,7 +74,7 @@ const Chat = (props) => {
         setResponses([]);
         sessionStorage.removeItem("chatHistory");
         try {
-            await fetch(`${process.env.REACT_APP_BACKEND_URL}/clear-chat-history`, {
+            await fetch(`${import.meta.env.VITE_BACKEND_URL}/clear-chat-history`, {
                 method: 'POST',
                 credentials: 'include'
             });
@@ -86,7 +86,7 @@ const Chat = (props) => {
 
     const handleLogout = async () => {
         try {
-            await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/logout`, {
+            await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/logout`, {
                 method: 'POST',
                 credentials: 'include'
             });

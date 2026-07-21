@@ -272,7 +272,7 @@ const CustomCalendar = (props) => {
     setLoading(true);
     setError(null);
     try {
-      const url = `${process.env.REACT_APP_BACKEND_URL}/api/calendar-events?timeMin=${encodeURIComponent(start)}&timeMax=${encodeURIComponent(end)}&t=${Date.now()}`;
+      const url = `${import.meta.env.VITE_BACKEND_URL}/api/calendar-events?timeMin=${encodeURIComponent(start)}&timeMax=${encodeURIComponent(end)}&t=${Date.now()}`;
       const response = await fetch(url, {
         credentials: 'include'
       });

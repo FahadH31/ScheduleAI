@@ -6,7 +6,7 @@ import Logo from "../assets/logo.png"
 import AboutIcon from "../assets//icons/help-circle.svg"
 
 function Login() {
-    const GoogleClientID = process.env.REACT_APP_GOOGLE_CLIENT_ID;
+    const GoogleClientID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
     return (
         <GoogleOAuthProvider clientId={GoogleClientID}>
