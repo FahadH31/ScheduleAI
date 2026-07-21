@@ -11,8 +11,9 @@ const router = express.Router();
 
 // Rate limit config
 const limiter = ratelimit({
+  // 50 messages every 15 mins (per IP address)
   windowMs: 15 * 60 * 1000,
-  limit: 25,
+  limit: 50,
   message: {
     success: false,
     error: "You're sending messages too fast. Please wait a few minutes before trying again."
@@ -208,87 +209,109 @@ router.post("/api/openai", limiter, async (req, res) => {
   var timeZone = req.header("User-TimeZone");
 
   // Store upcoming events to provide in OpenAI call.
-  var upcomingEvents = await getCalendarEvents(auth);
-  upcomingEvents = JSON.stringify(upcomingEvents);
+  const upcomingEvents = JSON.stringify(await getCalendarEvents(auth));
+
+  let allPromptUndos = [];
+  let hasToolCalls = true;
+  let loopCount = 0;
+  const maxLoops = 3; // Prevent infinite tool loops
 
   try {
-    // AI call to select the tool to use.
-    const toolSelectionCompletion = await openaiClient.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        {
-          role: "system",
-          content: `
-          You are a logic engine used to help a user interact (create/update/delete events) with their Google Calendar. 
-          Your only goal is to use the provided tools to fulfill the user's latest message. 
-          For create requests, fill details intelligently as you deem suitable based on your knowledge of the user and world. 
-          Example: If the user is from Toronto and they are flying to Vancouver, the duration of the event should match the real-world travel time between the cities by plane.
-          If further details would be beneficial, respond with text stating so.
-          If no tool is needed, respond with text that states so. Following is data you can use to guide your tool calls: 
-          - The current date/time is ${currentDate}.
-          - The user's timezone is ${timeZone}
-          - Information on the user's upcoming schedule: ${upcomingEvents}. ONLY use this data to obtain the event ID for 'updateEvent' or 'deleteEvent' tool calls. 
-          Notes: 
-          - Event IDs may change after an 'undo' action. Always use the most recent IDs provided in the 'upcomingEvents' list or the latest tool response for the current turn; never reuse IDs from earlier in the conversation history."
-          - Never use 'updateEvent' for NEW scheduling requests. It should only be used when the user explicitly asks to modify an existing event.
-          - Never call "undoPrompt" more than once per user prompt/turn.
-          - You are incapable of updating/deleting events that are more than 7 days (a week) old. Respond with text stating this if the user tries to perform this. 
-          `
-        },
-        ...req.session.conversationHistory
-      ],
-      tools: TOOLS,
-      max_completion_tokens: 500,
-    });
+    while (hasToolCalls && loopCount < maxLoops) {
+      // AI call to select the tool to use.
+      const toolSelectionCompletion = await openaiClient.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: [
+          {
+            role: "system",
+            content: `
+            You are a logic engine used to help a user interact (create/update/delete events) with their Google Calendar. 
+            Your only goal is to use the provided tools to fulfill the user's latest message. 
+            For create requests, fill details intelligently as you deem suitable. DO NOT ask the user for missing details unless absolutely necessary; instead, make reasonable assumptions (e.g., default 1-hour duration, use their local timezone).
+            For travel/flights, DO NOT attempt to calculate the exact flight duration or destination timezones. Instead, simply schedule a short event (e.g., 1 hour) marking the departure time in the user's local timezone.
+            If no tool is needed, respond with text that states so. Following is data you can use to guide your tool calls: 
+            - The current date/time is ${currentDate}.
+            - The user's timezone is ${timeZone}
+            - Information on the user's upcoming schedule: ${upcomingEvents}. ONLY use this data to obtain the event ID for 'updateEvent' or 'deleteEvent' tool calls. 
+            Notes: 
+            - Event IDs may change after an 'undo' action. Always use the most recent IDs provided in the 'upcomingEvents' list or the latest tool response for the current turn; never reuse IDs from earlier in the conversation history.
+            - Never use 'updateEvent' for NEW scheduling requests. It should only be used when the user explicitly asks to modify an existing event.
+            - Never call "undoPrompt" more than once per user prompt/turn.
+            - You can only update or delete events that are present in the provided upcoming schedule list. 
+            - If the user asks to modify/delete an event that occurred more than a week ago, politely inform them that it is over a week old and you do not have access to it. Do not reference internal mechanisms such as the 'upcoming events list'.
+            `
+          },
+          ...req.session.conversationHistory
+        ],
+        tools: TOOLS,
+        max_completion_tokens: 500,
+      });
 
-    const toolSelectionResult = toolSelectionCompletion.choices[0].message
-    req.session.conversationHistory.push(toolSelectionResult); // add the assistant message that requested tool call into convo history
+      const toolSelectionResult = toolSelectionCompletion.choices[0].message;
 
-    // If tools returned by the API call, collect them and execute the appropriate function
-    if (toolSelectionResult.tool_calls) {
-      const currentPromptUndos = []
-      for (const toolCall of toolSelectionCompletion.choices[0].message.tool_calls) { // loop through and call the function associated w each tool
-        const name = toolCall.function.name;
-        console.log(`Tool Call: ${name}`)
-        calendarAction = name; // update calendarAction
-        const args = JSON.parse(toolCall.function.arguments);
+      // If tools returned by the API call, collect them and execute the appropriate function
+      if (toolSelectionResult.tool_calls && toolSelectionResult.tool_calls.length > 0) {
+        req.session.conversationHistory.push(toolSelectionResult); // add the assistant message that requested tool call into convo history
+        for (const toolCall of toolSelectionResult.tool_calls) { // loop through and call the function associated w each tool
+          const name = toolCall.function.name;
+          console.log(`Tool Call: ${name}`);
+          calendarAction = name; // update calendarAction
+          const args = JSON.parse(toolCall.function.arguments);
 
-        const result = await callFunction(auth, name, args, req.session.undoStack)
+          const result = await callFunction(auth, name, args, req.session.undoStack);
 
-        if (name != "undoPrompt") { // if it's an action, store the undo data
-          const undoAction = result.undoAction
-          currentPromptUndos.push(undoAction);
+          if (name != "undoPrompt") { // if it's an action, store the undo data
+            const undoAction = result.undoAction;
+            allPromptUndos.push(undoAction);
+          }
+
+          req.session.conversationHistory.push({ // add results of this tool call into convo history
+            role: "tool",
+            tool_call_id: toolCall.id,
+            content: JSON.stringify({ success: result.success, message: result.resultMessage, eventId: result.eventId || undefined })
+          });
         }
-
-        req.session.conversationHistory.push({ // add results of this tool call into convo history
-          role: "tool",
-          tool_call_id: toolCall.id,
-          content: JSON.stringify({ success: result.success, message: result.resultMessage })
-        })
-      }
-      if (currentPromptUndos.length > 0) {
-        req.session.undoStack.push(currentPromptUndos); // store group of undo data for the current prompt
+        loopCount++;
+      } else {
+        hasToolCalls = false;
+        // Temporarily store this for the userResponse model to use
+        req.session.finalLogicMessage = toolSelectionResult;
       }
     }
 
-    // AI call for in-chat response after function called + completed  
-    const userResponseCompletion = await openaiClient.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        {
-          role: "system",
-          content: ` 
+    // Overwrite the undo stack to strictly enforce a limit of 1 undoable past state
+    if (allPromptUndos.length > 0) {
+      req.session.undoStack = [allPromptUndos];
+    }
+
+    const messagesForUserResponse = [
+      {
+        role: "system",
+        content: ` 
           You are an assistant that handles the in-chat conversation with the user using this service to interact with their Google Calendar. 
           Please provide a concise, friendly response that matches with the result of the function(s) called. 
-          Respond as if you just executed the function(s) yourself. If no function was called or an error occurred, respond accordingly.   
+          Respond as if you just executed the function(s) yourself. Base your response on the most recent tool call(s) or the assistant's latest message. Ignore any errors from previous conversational turns. If an error occurred, respond accordingly.
+          If an "undoPrompt" tool call fails because there is "Nothing to undo", politely explain to the user that there is nothing to undo - you can only undo the single most recent command, and you cannot go further back in history.
           Don't ask for another prompt from the user if the action has been performed successfully. You can schedule overlapping events without issue.
           - The current date/time is ${currentDate}.
           - The user's timezone is ${timeZone}
           - Information on the user's upcoming schedule: ${upcomingEvents}. 
           - Only refer to this information if needed per the user's request. Never provide the user with their upcoming schedule data or event URLs directly in the chat.`
-        },
-        ...req.session.conversationHistory
-      ],
+      },
+      ...req.session.conversationHistory
+    ];
+
+    // Only pass the logic engine's text if NO tools were called in the entire turn.
+    // Otherwise, its text is just an internal "I'm done" signal that will confuse the response model.
+    if (loopCount === 0 && req.session.finalLogicMessage && req.session.finalLogicMessage.content) {
+      messagesForUserResponse.push(req.session.finalLogicMessage);
+    }
+    delete req.session.finalLogicMessage; // clear it
+
+    // AI call for in-chat response after function called + completed  
+    const userResponseCompletion = await openaiClient.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: messagesForUserResponse,
       stream: true,
       max_completion_tokens: 500,
       temperature: 0.5
@@ -299,17 +322,21 @@ router.post("/api/openai", limiter, async (req, res) => {
     res.setHeader("Cache-Control", "no-cache");
     res.setHeader("Connection", "keep-alive");
 
+    let finalResponseText = "";
     for await (const chunk of userResponseCompletion) {
       if (chunk.choices[0]?.delta?.content) {
         const text = chunk.choices[0].delta.content;
+        finalResponseText += text;
         res.write(text); // Send response to frontend
       }
     }
 
+    req.session.conversationHistory.push({ role: "assistant", content: finalResponseText });
+
     res.write("\n\n");
     res.end();
   }
-  catch (error) {
+  catch(error) {
     console.error("Operation Error:", error);
     res.status(500).json({ error: "Error processing request", details: error.message });
   }

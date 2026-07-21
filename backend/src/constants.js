@@ -32,7 +32,7 @@ TOOLS = [
                         "properties": {
                             "dateTime": {
                                 "type": "string",
-                                "description": "Event's start time in ISO 8601 format"
+                                "description": "Event's start time in ISO 8601 format. You MUST include both date and time (e.g. '2026-08-07T09:00:00-04:00'). If the user does not specify a time, choose a reasonable default time based on the event context. DO NOT leave the time component blank."
                             },
                             "timeZone": {
                                 "type": "string",
@@ -50,7 +50,7 @@ TOOLS = [
                         "properties": {
                             "dateTime": {
                                 "type": "string",
-                                "description": "Event's end time in ISO 8601 format"
+                                "description": "Event's end time in ISO 8601 format. IMPORTANT: If the event duration causes the end time to pass midnight (e.g. 18:00 + 6 hours), you MUST increment the date to the next day (e.g. 2026-07-25T00:00:00, not 2026-07-24T00:00:00). You MUST include both date and time. DO NOT leave the time component blank."
                             },
                             "timeZone": {
                                 "type": "string",
@@ -136,7 +136,7 @@ TOOLS = [
                 "properties": {
                     "eventId": {
                         "type": "string",
-                        "description": "ID associated with the event to update"
+                        "description": "ID associated with the event. By default, if modifying a recurring event, you MUST use the 'recurringEventId' to modify the entire series. Only use the instance 'id' if the user explicitly asks to modify just one specific instance."
                     },
                     "updatedEventData": {
                         "type": "object",
@@ -160,7 +160,7 @@ TOOLS = [
                                 "properties": {
                                     "dateTime": {
                                         "type": "string",
-                                        "description": "Event's start time in ISO 8601 format"
+                                        "description": "Event's start time in ISO 8601 format. You MUST include both date and time (e.g. '2026-08-07T09:00:00-04:00'). If the user does not specify a time, choose a reasonable default time based on the event context. DO NOT leave the time component blank."
                                     },
                                     "timeZone": {
                                         "type": "string",
@@ -174,7 +174,7 @@ TOOLS = [
                                 "properties": {
                                     "dateTime": {
                                         "type": "string",
-                                        "description": "Event's end time in ISO 8601 format"
+                                        "description": "Event's end time in ISO 8601 format. IMPORTANT: If the event duration causes the end time to pass midnight (e.g. 18:00 + 6 hours), you MUST increment the date to the next day (e.g. 2026-07-25T00:00:00, not 2026-07-24T00:00:00). You MUST include both date and time. DO NOT leave the time component blank."
                                     },
                                     "timeZone": {
                                         "type": "string",
@@ -249,7 +249,7 @@ TOOLS = [
                 "properties": {
                     "eventId": {
                         "type": "string",
-                        "description": "ID associated with the event to be deleted."
+                        "description": "ID associated with the event. By default, if deleting a recurring event, you MUST use the 'recurringEventId' to delete the entire series. Only use the instance 'id' if the user explicitly asks to delete just one specific instance."
                     },
                 },
                 "required": ["eventId"]

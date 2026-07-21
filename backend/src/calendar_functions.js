@@ -51,6 +51,7 @@ async function getCalendarEvents(auth) {
     // Store event information
     const eventSummaries = events.map(event => ({
       id: event.id,
+      recurringEventId: event.recurringEventId,
       summary: event.summary,
       startTime: event.start,
       colorID: event.colorId,

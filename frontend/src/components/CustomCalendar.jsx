@@ -267,7 +267,7 @@ const CustomCalendar = (props) => {
   }, [currentDate, viewMode, timeZone]);
 
   // Fetch events based on current dateRange
-  const loadEvents = async (start, end) => {
+  const loadEvents = async (start, end, forceReload = false) => {
     if (!start || !end) return;
     setLoading(true);
     setError(null);
@@ -302,7 +302,7 @@ const CustomCalendar = (props) => {
           }));
         console.log("API calendar-events loaded. Count:", data.events?.length, "Mapped:", mapped.length);
         setEvents(prevEvents => {
-          const newEvents = [...prevEvents];
+          const newEvents = forceReload ? [] : [...prevEvents];
           mapped.forEach(incomingEvent => {
             const index = newEvents.findIndex(e => e.id === incomingEvent.id);
             if (index > -1) {
@@ -337,7 +337,7 @@ const CustomCalendar = (props) => {
       if (e.origin !== window.location.origin) return;
       if (e.data === 'reload') {
         if (dateRange.start && dateRange.end) {
-          loadEvents(dateRange.start, dateRange.end);
+          loadEvents(dateRange.start, dateRange.end, true);
         }
       }
     };
@@ -824,6 +824,9 @@ const CustomCalendar = (props) => {
             </button>
             <span className="text-base sm:text-xl font-medium text-[#3c4043] ml-3 select-none tracking-wide truncate max-w-[120px] sm:max-w-none">
               {getHeaderTitle()}
+            </span>
+            <span className="hidden sm:flex items-center justify-center text-xs font-medium text-[#5f6368] bg-white px-2 py-1 rounded-md ml-2 border border-[#dadce0]">
+              {moment().tz(timeZone).format('z')}
             </span>
           </div>
         </div>
