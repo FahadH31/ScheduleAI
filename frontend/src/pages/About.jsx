@@ -1,8 +1,12 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import Logo from "../assets/logo.png";
 import DashboardScreenshot from "../assets/sample_screenshot.png";
 
 const About = () => {
+    const location = useLocation();
+    const from = location.state?.from ?? '/';
+    const openTab = location.state?.openTab
+
     return (
         <div className="flex h-full min-h-screen flex-col sm:flex-row text-center animate-fadeIn bg-white">
             <div id='left-side' className='flex flex-col text-left w-full sm:w-[45vw] p-10 overflow-y-auto'>
@@ -18,11 +22,14 @@ const About = () => {
                     </p>
 
                     <div className="flex flex-col space-y-2 mb-4">
-                        <Link to="/privacy" className="text-blue-600 hover:underline text-sm">Privacy Policy</Link>
-                        <Link to="/terms" className="text-blue-600 hover:underline text-sm">Terms of Service</Link>
+                        <Link to="/privacy" target="_blank" className="text-blue-600 hover:underline text-sm">Privacy Policy</Link>
+                        <Link to="/terms" target="_blank" className="text-blue-600 hover:underline text-sm">Terms of Service</Link>
                     </div>
-                    <Link to="/" className="text-blue-600 font-semibold hover:underline">
-                        &larr; Back to Login
+                    <Link
+                        to={from}
+                        state={{ openTab }}
+                        className="text-blue-600 font-semibold hover:underline">
+                        &larr; Back
                     </Link>
                 </div>
             </div>

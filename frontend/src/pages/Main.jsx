@@ -1,10 +1,21 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import CustomCalendar from "../components/CustomCalendar";
 import Chat from "../components/Chat";
 import Settings from "../components/Settings"
+import { useLocation, useNavigate } from 'react-router-dom';
 
-function Main() {
-  const [activeTab, setActiveTab] = useState('chat')
+const Main = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState(location.state?.openTab || 'chat');
+
+  useEffect(() => {
+    // If loaded with an openTab state, replace the current history entry without the state so that page refreshes default back to 'chat'.
+    if (location.state?.openTab) {
+       navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location.state, navigate, location.pathname]);
+
   // Calendar variables
   const [viewMode, setViewMode] = useState(() => localStorage.getItem("viewMode") || "MONTH")
   const [timeZone, setTimeZone] = useState(() => localStorage.getItem("timeZone") || Intl.DateTimeFormat().resolvedOptions().timeZone)
@@ -23,12 +34,12 @@ function Main() {
       {activeTab === 'chat' ? (
         <Chat onSettingsClick={changeTab} />
       ) : (
-        <Settings 
-          onBackClick={changeTab} 
-          viewMode={viewMode} 
+        <Settings
+          onBackClick={changeTab}
+          viewMode={viewMode}
           timeZone={timeZone}
-          setViewMode={setViewMode} 
-          setTimeZone={setTimeZone} 
+          setViewMode={setViewMode}
+          setTimeZone={setTimeZone}
         />
       )}
     </div>

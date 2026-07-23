@@ -34,10 +34,6 @@ const Privacy = () => {
                         ScheduleAI's use and transfer of information received from Google APIs to any other app will adhere to the <a href="https://developers.google.com/terms/api-services-user-data-policy#limited-use" target="_blank" rel="noreferrer" className="text-blue-600 hover:underline">Google API Services User Data Policy</a>, including the Limited Use requirements.
                     </p>
                 </section>
-
-                <Link to="/about" className="text-blue-600 font-semibold hover:underline inline-block mt-4">
-                    &larr; Back to About
-                </Link>
             </div>
         </div>
     );

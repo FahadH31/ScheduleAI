@@ -13,7 +13,8 @@ function Login() {
             {/* About Page Link */}
             <Link
                 to="/about"
-                className="fixed top-6 left-6 z-50 transition-opacity hover:opacity-100 opacity-30"
+                state={{from: '/'}}
+                className="fixed top-6 left-6 z-50 transition-opacity hover:opacity-60 opacity-30"
                 title="About ScheduleAI"
             >
                 <img src={AboutIcon} alt="About page button icon"></img>

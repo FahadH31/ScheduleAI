@@ -1,5 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
+import { Link } from "react-router-dom";
 import BackIcon from "../assets/icons/back.svg";
+import AboutIcon from "../assets//icons/help-circle-grey.svg"
 import DeleteDataButton from "../components/DeleteDataButton";
 
 const Settings = (props) => {
@@ -40,6 +42,16 @@ const Settings = (props) => {
 
     return (
         <div className="flex flex-col p-3 sm:w-[42%] md:w-[40%] lg:w-[37%] xl:w-[35%] sm:p-6 animate-fadeIn z-20">
+            {/* About Page Link */}
+            <Link
+                to="/about"
+                state = {{from: '/dashboard', openTab: 'settings'}}
+                className="fixed top-6 right-6 z-50 transition-opacity hover:opacity-50"
+                title="About ScheduleAI"
+            >
+                <img src={AboutIcon} alt="About page button icon"></img>
+            </Link>
+
             {/* Back Button */}
             <button
                 className="ml-0 mr-auto transition-opacity hover:opacity-50"

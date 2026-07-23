@@ -28,15 +28,15 @@ const DeleteDataButton = () => {
             {isModalOpen && (
                 // Darkened background
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 transition-opacity animate-fadeIn">
-                    <div className="bg-gray-900 border border-gray-700/50 rounded-2xl shadow-2xl max-w-2xl w-full p-8 text-white relative max-h-[90vh] overflow-y-auto custom-scrollbar">
+                    <div className="bg-gray-900 border border-gray-700/50 rounded-2xl shadow-2xl max-w-3xl w-full p-8 text-white relative max-h-[90vh] overflow-y-auto custom-scrollbar">
                         <p>
                             Are you sure you want to continue? Proceeding will <b>permanently
-                                delete all user-specific data </b> (conversation history, stored settings, etc.)
+                                delete all user-specific data </b> from ScheduleAI (conversation history, stored settings, etc.). Your calendar and events will not be impacted.
                         </p>
                         <div className="flex items-center">
                             <button
                                 onClick={() => setIsModalOpen(false)}
-                                className="mt-6 w-26 bg-[#065AD8] text-white font-semibold py-3 px-4 rounded-xl transition-all hover:bg-blue-700 ml-auto mr-2"
+                                className="mt-6 w-26 bg-gray-400 text-white font-semibold py-3 px-4 rounded-xl transition-all hover:bg-gray-500 ml-auto mr-2"
                             >
                                 Cancel
                             </button>

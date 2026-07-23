@@ -23,14 +23,10 @@ const Terms = () => {
 
                 <section className="mb-8">
                     <h2 className="text-xl font-bold mb-3 text-gray-800">3. Disclaimer of Warranties</h2>
-                    <p className="text-gray-700 leading-relaxed italic">
+                    <p className="text-gray-700 leading-relaxed">
                         This service is provided "as-is" and "as available" without any warranties of any kind. We do not guarantee the permanent availability of the service or the absolute accuracy of the AI scheduling engine.
                     </p>
                 </section>
-
-                <Link to="/about" className="text-blue-600 font-semibold hover:underline inline-block mt-4">
-                    &larr; Back to About
-                </Link>
             </div>
         </div>
     );

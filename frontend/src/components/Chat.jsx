@@ -151,7 +151,7 @@ const Chat = (props) => {
 
                                 <div className="bg-gray-700/30 backdrop-blur-sm rounded-xl p-5 border border-gray-600/30">
                                     <div className="flex items-center gap-2 mb-2">
-                                        <h3 className="text-lg font-semibold">Technical Limitations</h3>
+                                        <h3 className="text-lg font-semibold">Technical Details</h3>
                                     </div>
                                     <ul className="space-y-3">
                                         <li className="text-sm text-gray-300">
@@ -164,11 +164,11 @@ const Chat = (props) => {
                                         </li>
                                         <li className="text-sm text-gray-300">
                                             <span className="font-medium text-white">Primary Calendar:</span>
-                                            <span className="text-gray-400 block mt-1">I currently only support the primary calendar associated with your Google account.</span>
+                                            <span className="text-gray-400 block mt-1">All actions I perform are based on the primary calendar associated with your Google account.</span>
                                         </li>
                                         <li className="text-sm text-gray-300">
                                             <span className="font-medium text-white">Tasks:</span>
-                                            <span className="text-gray-400 block mt-1">I currently only support Google Calendar's 'Events' feature, not 'Tasks'.</span>
+                                            <span className="text-gray-400 block mt-1">I currently support Google Calendar's 'Events', not 'Tasks'.</span>
                                         </li>
                                     </ul>
                                 </div>
@@ -230,7 +230,7 @@ const Chat = (props) => {
                         <p className="text-sm font-semibold text-green-400">Calendar Assistant</p>
                         <div className="prose prose-invert prose-sm max-w-none">
                             <ReactMarkdown>
-                                Welcome to ScheduleAI! I'm your intelligent Google Calendar assistant. I can **create**, **reschedule**, and **delete** events using natural language. I can handle **multiple different actions at once**. If you make a mistake, just say **"undo"** and I'll revert any actions I took based on your last prompt.
+                                Welcome to ScheduleAI! I'm your intelligent Google Calendar assistant. I can **create**, **update**, and **delete** events using natural language. I can handle **multiple different actions at once**. If you make a mistake, just say **"undo"** and I'll revert any actions I took based on your last prompt.
                             </ReactMarkdown>
                             <button
                                 onClick={() => setIsModalOpen(true)}
