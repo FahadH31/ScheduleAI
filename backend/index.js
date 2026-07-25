@@ -8,6 +8,8 @@ const apiRoutes = require('./src/api_routes');
 const app = express();
 const port = process.env.PORT || 8070;
 
+app.set('trust proxy', 1);
+
 app.use(cors({
   origin: process.env.FRONTEND_URL,
   credentials: true, // allows cookies to be sent
@@ -20,6 +22,10 @@ app.use(session({
     mongoUrl: process.env.MONGODB_URL,
     dbName: 'user-data'
   }),
+  cookie: {
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
+  },
   httpOnly: true,
   saveUninitialized: false,
   resave: false
